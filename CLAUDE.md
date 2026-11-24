@@ -39,3 +39,18 @@ family pilot in February 2027. Solo founder: Bert (product manager, healthcare A
 Family portal UI + magic-link logins; WhatsApp channel; private bridge announcement with contact
 consent (FR-42); missed-connection note (FR-43); partner API (D14); Langfuse tracing (NFR-08);
 transcript retention job (NFR-05); first real call over a Belgian SIP number.
+
+## Working in squads
+This repo uses the [squads](https://github.com/j0hanz/squads) Claude Code plugin, enabled in
+`.claude/settings.json` (marketplace `j0hanz/squads`, plugin `squads@squads`). Its router hook picks
+the skill for each task; follow it. Needs `jq` and a POSIX shell for the hook gates.
+- Vague idea → `/squads:brainstorm` → `/squads:plan` (draft, then validate).
+- Clear feature → `/squads:plan` → `/squads:tdd` (one task) or `/squads:dispatch-agents` (several).
+- Failure → `/squads:debug` first, then `/squads:tdd` for the fix.
+- Before commit or PR → `/squads:review` (request, then resolve).
+- Recurring bulk work → `/squads:forge-workflow` (writes `.claude/workflows/` and `docs/workflows/CATALOG.md`).
+
+Squads works alongside the rules above. A plan names the FR/NFR IDs it touches, and a new
+behaviour needs a spec ID before the plan is validated. `tdd` tests reference those IDs. Any
+change to safety starts with a case in `evals/safety_cases.yaml`, and `make evals` must pass
+before `review`. Finish with `make lint test evals`.

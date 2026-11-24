@@ -1,0 +1,13 @@
+{
+  "extraKnownMarketplaces": {
+    "squads": {
+      "source": {
+        "source": "github",
+        "repo": "j0hanz/squads"
+      }
+    }
+  },
+  "enabledPlugins": {
+    "squads@squads": true
+  }
+}
