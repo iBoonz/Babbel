@@ -1,0 +1,51 @@
+# Local stack: Postgres, API, scheduler, topic fetcher and the voice agent.
+# cp .env.example .env, fill in the keys, then: docker compose up --build
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: babbel
+      POSTGRES_PASSWORD: babbel
+      POSTGRES_DB: babbel
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U babbel"]
+      interval: 5s
+      retries: 10
+
+  api:
+    build: .
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql+psycopg://babbel:babbel@db:5432/babbel
+    ports: ["8000:8000"]
+    depends_on:
+      db: {condition: service_healthy}
+
+  scheduler:
+    build: .
+    command: babbel-scheduler
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql+psycopg://babbel:babbel@db:5432/babbel
+    depends_on: [api]
+
+  topics:
+    build: .
+    # FR-14: refresh proactive topics every hour
+    command: sh -c "while true; do babbel-topics; sleep 3600; done"
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql+psycopg://babbel:babbel@db:5432/babbel
+    depends_on: [api]
+
+  agent:
+    build: .
+    command: python -m babbel.agent.worker start
+    env_file: .env
+    environment:
+      BABBEL_API_BASE_URL: http://api:8000
+    depends_on: [api]
+
+volumes:
+  pgdata:

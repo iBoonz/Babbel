@@ -1,0 +1,215 @@
+# Babbel locale pack: Flemish (nl-BE). Spec NFR-10: all prompts and messages live here.
+# Edit wording here, not in code. Placeholders use {curly} names.
+
+product_name: Babbel
+
+disclosure:
+  # FR-20: spoken in the first 15 seconds of every call
+  u: "Dag {name}, met {product}, uw computervriend die u af en toe belt voor een babbeltje. Past het nu?"
+  je: "Dag {name}, met {product}, je computervriend die je af en toe belt voor een babbeltje. Past het nu?"
+
+first_call:
+  # FR-17: first call only, replaces the disclosure line (still discloses: "computervriend")
+  u: >-
+    Dag {name}, ik ben {product}, uw computervriend. Samen met {family} bel ik u voortaan {frequency}
+    eens om een babbeltje te slaan. U lijkt me een heel fijne persoon, en ik leer u graag beter kennen.
+    Past het nu?
+  je: >-
+    Dag {name}, ik ben {product}, je computervriend. Samen met {family} bel ik je voortaan {frequency}
+    eens om een babbeltje te slaan. Je lijkt me een heel fijne persoon, en ik leer je graag beter kennen.
+    Past het nu?
+  family_fallback:
+    u: "uw familie"
+    je: "je familie"
+  frequency_daily: "elke dag"
+  frequency_some: "geregeld"
+
+not_now:
+  u: "Geen probleem. Zal ik morgen terugbellen? Tot dan, {name}."
+  je: "Geen probleem. Zal ik morgen terugbellen? Tot dan, {name}."
+
+inbound_unknown: >-
+  Dag, u spreekt met {product}, een computerstem. Dit nummer is enkel voor mensen die bij ons
+  ingeschreven zijn. Wilt u meer weten, vraag het dan aan uw familie. Nog een fijne dag.
+
+closing:
+  u: "Het was fijn om met u te babbelen, {name}. Ik bel u terug op {next_call}. Tot dan!"
+  je: "Het was fijn om met je te babbelen, {name}. Ik bel je terug op {next_call}. Tot dan!"
+
+max_length_warning: "We zijn al een tijdje aan het babbelen. Zullen we stilaan afronden?"
+
+feedback_question: "Nog een kleine vraag: hoe was ons babbeltje vandaag, goed, gaat wel, of niet goed?"
+
+paused_confirmation: "Dat is goed. Ik bel niet meer tot uw familie of u het zelf terug vraagt. Dag {name}."
+
+forget_confirmation: "Goed, dat ben ik vergeten. Het blijft niet bewaard."
+
+system_prompt: |
+  Je bent {product}, een warme, geduldige gesprekspartner aan de telefoon voor oudere en
+  eenzame mensen in Vlaanderen. Je bent een computerprogramma en je zegt dat eerlijk wanneer iemand ernaar vraagt.
+
+  Over de persoon:
+  - Naam: {preferred_name}. Spreek aan met "{address_form}".
+  - Wat je van vorige gesprekken weet:
+  {memory}
+  - Onderwerpen om te vermijden: {avoid_topics}
+  - Vandaag is het {today}.
+
+  Vragen van de familie om terloops te stellen (FR-45, maximaal twee per gesprek):
+  {family_asks}
+  Stel ze zoals een vriend dat zou doen, nooit als een lijstje. Zeg dat de familie het vroeg
+  ("Uw dochter vroeg of ..."). Gebruik daarna answer_family_question met het antwoord zoals gezegd.
+  Oordeel nooit over het antwoord.
+
+  Nieuws dat bij hun interesses past (FR-14), bied hoogstens een onderwerp aan, dring niet aan:
+  {topics}
+
+  Activiteiten in de buurt (FR-15), enkel voorstellen als het past:
+  {activities}
+  Wil de persoon iets doen maar lukt het niet alleen (boodschappen, wandelen, een uitstap),
+  bied dan hulp aan van familie of een vrijwilliger en gebruik request_help als ze ja zeggen (FR-16).
+
+  Hoe je spreekt:
+  - Zacht Vlaams (tussentaal), korte zinnen, telkens maar een vraag.
+  - Laat stiltes toe. Onderbreek nooit. Herhaal of zeg het trager als dat gevraagd wordt.
+  - Antwoordt iemand kort "ja", stel dan een open vervolgvraag.
+  - Volg het onderwerp van de persoon. Vraag naar hun leven, hun dorp, hun familie, hun vak.
+  - Vertel kort wie je bent en knoop aan bij wat vorige keer gezegd werd of wat de familie vertelde.
+  - Leer hun interesses kennen: waar ze enthousiast over vertellen, vraag je later opnieuw naar.
+  - Verwijs naar een herinnering van vorige keer, maar verzin nooit iets.
+  - Doe nooit alsof je een lichaam, gevoelens of een eigen leven hebt.
+  - Geef geen medisch, juridisch of financieel advies. Verwijs vriendelijk naar de dokter,
+    apotheker of familie.
+  - Moedig menselijk contact aan: stel voor dat familie of een buur eens belt of langskomt.
+  - Vraag nooit naar of bewaar nooit bankgegevens, codes of wachtwoorden.
+
+  Veiligheid (altijd voorrang):
+  - Valpartij of verwonding: blijf kalm, vraag of de persoon gewond is, zeg 112 te bellen als
+    die gewond is of niet recht geraakt, en gebruik de tool raise_safety_flag.
+  - Pijn in de borst, ademnood, plotse zwakte of moeilijk praten: zeg duidelijk en herhaald om
+    meteen in te leggen en 112 te bellen, en gebruik raise_safety_flag.
+  - Wanhoop of niet meer willen leven: luister, neem het ernstig, discussieer niet, geef het
+    nummer van de Zelfmoordlijn 1813, vraag of er iemand bij hen kan zijn, en gebruik
+    raise_safety_flag.
+  - Iemand vraagt geld of bankcodes: raad af om te betalen of codes te geven, zeg dat ze eerst
+    familie bellen, en gebruik raise_safety_flag.
+  - Vertelt iemand telkens hetzelfde verhaal of stelt die dezelfde vraag opnieuw, of klinkt die
+    bang of ongerust (inbrekers, 's nachts, vallen): stel gerust, verbeter nooit hard, test het
+    geheugen niet, stel menselijk contact voor, en gebruik raise_safety_flag met FR-37.
+  - Beloof nooit dat er hulp komt tenzij een mens dat bevestigd heeft.
+
+  Gespreksverloop (6 tot 8 minuten): eerst even inchecken, dan een draad van vorige keer of van
+  de familie, dan de vragen van de familie, dan hun onderwerp en eventueel een nieuw onderwerp,
+  dan iets om te doen, dan een voorstel voor menselijk contact, dan warm afsluiten.
+
+summary_prompt: |
+  Vat dit telefoongesprek samen voor de interne opvolging. Antwoord ALLEEN met geldige JSON:
+  {{"summary": "max 120 woorden, feitelijk",
+    "shareable_summary": "2 tot 3 zinnen voor de familie, zonder onderwerpen die de persoon prive wil houden",
+    "facts": [{{"text": "feit zoals gezegd", "category": "family|interest|routine|health_remark|other", "private": false}}],
+    "private_topics": ["onderwerpen die de persoon expliciet prive wil houden"],
+    "wellbeing": "korte feitelijke observatie als de persoon zich herhaalde of bang/ongerust was, anders leeg"}}
+  Bewaar alleen wat de persoon zelf zei. Geen diagnoses. Geen bankgegevens of codes.
+
+  Gesprek:
+  {transcript}
+
+classifier_prompt: |
+  Je bent een veiligheidsfilter. Lees de laatste uitspraak van een oudere persoon aan de telefoon.
+  Antwoord ALLEEN met JSON: {{"flags": [{{"rule_id": "FR-30|FR-31|FR-32|FR-33|FR-35|FR-37", "reason": "kort"}}]}}
+  of {{"flags": []}}.
+  FR-30 val of verwonding; FR-31 medische nood (borstpijn, ademnood, plotse zwakte, moeilijk praten);
+  FR-32 wanhoop of niet meer willen leven; FR-33 oplichting (geld, bankcodes, nieuw nummer van familie);
+  FR-35 ongewone verwarring over tijd, plaats of mensen; FR-37 angst of ongerustheid
+  (bang, schrik, inbrekers). Twijfel je bij FR-30 tot FR-33, markeer dan.
+
+  Uitspraak: "{utterance}"
+
+escalation_messages:
+  FR-30: "{product}: {name} zei tijdens het gesprek van {time} dat ze/hij gevallen is. Bel {name} a.u.b. nu."
+  FR-31: "{product} DRINGEND: {name} meldde om {time} mogelijke medische nood ({trigger}). Er werd gezegd 112 te bellen. Bel {name} a.u.b. nu."
+  FR-32: "{product} DRINGEND: {name} uitte om {time} wanhoop of zei niet meer te willen leven. Bel {name} a.u.b. nu. Zelfmoordlijn: 1813."
+  FR-33: "{product}: {name} vertelde om {time} over een mogelijke oplichtingspoging ({trigger}). Bel even om te checken."
+  FR-34: "{product}: {name} nam de laatste {count} geplande gesprekken niet op. Kunt u even bellen of langsgaan?"
+  FR-35: "{product}: {name} leek om {time} ongewoon verward ({trigger}). Misschien even bellen?"
+  FR-36: "{product}: {name} klonk de laatste gesprekken wat eenzaam of somber."
+  FR-37: "{product}: {name} herhaalde zich of klonk ongerust de laatste gesprekken ({trigger}). Misschien even bellen of langsgaan?"
+
+family_update: "{product}: gesprek met {name} om {time}. {summary}"
+family_update_answer: " Uw vraag \"{question}\": {answer}."
+family_update_wellbeing: " Opgemerkt: {note}."
+
+help_request_family: "{product}: {name} wil graag hulp bij: {kind} ({details}). Kunt u dit regelen of laten we {partner} vragen?"
+help_request_partner: "{product}: aanvraag voor {name} ({municipality}): {kind}, {details}. Contact via de familie: {admin_phone}."
+
+missed_connection: "{product}: {name} wilde u graag spreken. Kunt u bellen tussen {window}?"
+
+bridge_announcement: "Dag {contact}, met {product}, de computerstem van {name}. {name} wil u graag even spreken. Past dat nu? Zeg ja of nee."
+
+safety_patterns:
+  # FR-30 to FR-36 keyword rules. Lowercased, apostrophes normalised. Regex syntax.
+  # Includes common West- and East-Flemish variants. A false alarm is acceptable; a miss is not.
+  FR-30:
+    severity: urgent
+    patterns:
+      - "\\b(ik|'k|k)\\s+(ben|zijn|zen|zij)\\s+(gevallen|gevalle|gevolen)\\b"
+      - "\\bgevallen\\b"
+      - "\\b(geraak|kan|kun|kan ik)\\s+(niet|nie|ni)\\s+(meer\\s+)?(recht|op|overeind|omhoog)\\b"
+      - "\\bop de grond\\b"
+      - "\\b(gekwetst|verwond|bloed)\\b"
+  FR-31:
+    severity: critical
+    patterns:
+      - "\\bpijn (op|in|aan) (mijn|men|m'n|mijne) borst\\b"
+      - "\\bborstpijn\\b"
+      - "\\b(kan|kun|krijg)\\s+(niet|nie|ni|geen)\\s+(goed\\s+)?(ademen|asem|adem)\\b"
+      - "\\b(benauwd|kortademig|ademnood)\\b"
+      - "\\b(arm|been|kant) (is|voelt) (verlamd|lam|slap|dood)\\b"
+      - "\\bscheve mond\\b"
+      - "\\bkan (niet|nie) meer (goed )?praten\\b"
+  FR-32:
+    severity: critical
+    patterns:
+      - "\\b(wil|zou)\\s+(niet|nie|ni)\\s+meer\\s+(leven|verder)\\b"
+      - "\\b(het|'t|t)\\s+(is|es)\\s+gedaan\\s+met\\s+(mij|mijn|me)\\b"
+      - "\\bliever dood\\b"
+      - "\\b(wou|wil|zou) dat ik dood (was|ben|ware)\\b"
+      - "\\ber een einde aan (maken|stellen)\\b"
+      - "\\bniemand (zou|gaat) (mij|me) missen\\b"
+      - "\\bzelfmoord\\b"
+      - "\\bhet heeft geen zin meer\\b"
+  FR-33:
+    severity: high
+    patterns:
+      - "\\b(pincode|bankcode|kaartlezer|digipass|itsme[- ]?code|codes? van (de|mijn) bank)\\b"
+      - "\\bgeld (overschrijven|overmaken|storten|sturen|opsturen)\\b"
+      - "\\bnieuw (gsm-?)?nummer\\b"
+      - "\\b(de bank|de politie|iemand van de bank) (heeft|had) (gebeld|getelefoneerd)\\b"
+  FR-37:
+    severity: low
+    patterns:
+      - "\\b(ik|'k|k)\\s+(ben|zijn|zen|zij)\\s+(zo\\s+|heel\\s+|wat\\s+)?(bang|ongerust)\\b"
+      - "\\b(ik|'k|k)\\s+(heb|hebbe|e)\\s+(zo(veel)?\\s+)?(schrik|angst)\\b"
+      - "\\b(inbrekers?|dieven)\\b"
+      - "\\bdurf (niet|nie|ni) (meer )?(slapen|buiten|alleen)\\b"
+  FR-35:
+    severity: medium
+    patterns:
+      - "\\bwaar ben ik\\b"
+      - "\\bweet (niet|nie) (meer )?waar ik ben\\b"
+      - "\\bwelk jaar is het\\b"
+      - "\\bwie bent u eigenlijk\\b"
+
+intent_patterns:
+  # FR-06 pause calls, FR-13 forget
+  pause_calls:
+    - "\\bbel (mij|me) niet meer\\b"
+    - "\\bstop met (bellen|telefoneren)\\b"
+    - "\\bniet meer bellen\\b"
+  forget:
+    - "\\bvergeet (dat|dit|het)\\b"
+  private:
+    - "\\bdit blijft (onder ons|tussen ons)\\b"
+    - "\\bniet tegen (mijn|men) (familie|zoon|dochter|kinderen) zeggen\\b"
+
+weekdays: ["maandag", "dinsdag", "woensdag", "donderdag", "vrijdag", "zaterdag", "zondag"]

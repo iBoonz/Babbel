@@ -1,0 +1,14 @@
+# Proactive topics (spec FR-14, D13). Interest keyword -> RSS/Atom feeds.
+# A person's interest matches a key when one contains the other ("voetbal" ~ "voetbal Club Brugge").
+# Example feeds only: check each URL and the source's terms of use before the pilot.
+# Babbel keeps the headline and a short summary, never the full article.
+interests:
+  nieuws:
+    - https://www.vrt.be/vrtnws/nl.rss.articles.xml
+  voetbal:
+    - https://sporza.be/nl/categorie/voetbal.rss.xml
+  wielrennen:
+    - https://sporza.be/nl/categorie/wielrennen.rss.xml
+  weer: []
+  tuin: []
+  kerk: []
