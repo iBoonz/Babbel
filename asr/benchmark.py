@@ -1,4 +1,4 @@
-"""Dialect ASR benchmark (spec NFR-08, D5).
+"""Dialect ASR benchmark (spec NFR-11, D5).
 
 Measures word error rate (WER) per dialect on your own recordings, for any OpenAI-compatible
 transcription endpoint (OpenAI, Azure OpenAI, a self-hosted faster-whisper server, ...).

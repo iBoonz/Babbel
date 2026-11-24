@@ -1,4 +1,4 @@
-# Dialect speech recognition (spec NFR-08, D5)
+# Dialect speech recognition (spec NFR-11, D5)
 
 Goal for the pilot: Babbel understands West- and East-Flemish speakers of 75+ well enough to
 hold a conversation (WER ≤ 25%) and **never misses a safety phrase** (FR-30 to FR-37).

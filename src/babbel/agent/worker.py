@@ -4,7 +4,7 @@ One job = one phone call. The scheduler dispatches this agent into a room with m
 {"call_id", "senior_id", "phone", "direction": "outbound"}; inbound calls arrive through a
 LiveKit SIP dispatch rule with no metadata.
 
-Spec coverage: FR-01/03 (calls), FR-05 (max length), FR-06 (pause), FR-10 (memory thread),
+Spec coverage: FR-01/03 (calls), FR-05 (max length), FR-06 (pause), FR-10/18 (profile, memory thread),
 FR-11 (summary), FR-13 (forget), FR-14/15 (proactive topics and activities, via prompt),
 FR-16 (help requests), FR-17 (first-call introduction), FR-20/21/22 (disclosure and
 boundaries), FR-30 to FR-37 (safety and wellbeing: keyword rules and a repetition tracker on

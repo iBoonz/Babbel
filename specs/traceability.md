@@ -1,7 +1,7 @@
 # Requirement traceability (spec v0.1, first version)
 
-The spec itself is the living doc: https://claude.ai/artifact/4vc64Mxc6SLH1zu31Kykbp
-(Export → Markdown to keep a copy here.) This table maps each requirement to code and tests.
+The spec is `specs/spec.md` (source of truth). This table maps each built requirement to code and tests.
+Requirements tagged **New** in the spec are not built yet and are listed at the bottom.
 
 | ID | Requirement (short) | Code | Tests / evals |
 |---|---|---|---|
@@ -11,7 +11,8 @@ The spec itself is the living doc: https://claude.ai/artifact/4vc64Mxc6SLH1zu31K
 | FR-04 | Quiet hours 08:00–20:00 | `core/scheduler.within_quiet_hours`, `config.default_quiet_start` | `test_scheduler::test_quiet_hours_from_eight`, `test_api::test_onboarding_defaults...` |
 | FR-05 | Max call length | `agent/worker.enforce_max_length` | manual |
 | FR-06 | Pause by voice | `BabbelAgent.pause_calls`, `api/main.pause_calls` | `test_api::test_pause_and_forget_by_voice` |
-| FR-10 | Profile; say who you are, pick up last time / family | `core/memory.memory_context`, locale `system_prompt` | `test_prompts`, persona evals |
+| FR-10 | Profile | `Senior` table, `core/memory.memory_context` | `test_prompts`, `test_api` |
+| FR-18 | Opening says who is calling, picks up last time / family | `core/prompts.opening_line`, locale `system_prompt` | `test_prompts`, persona evals |
 | FR-11 | Summary + facts, no audio | `agent/worker.finalize`, `core/llm.summarise_call`, `api/main.complete_call` | `test_api::test_call_complete_stores...`, `test_memory` |
 | FR-12 | Use memory naturally | locale `system_prompt` | persona evals |
 | FR-13 | Forget on request | `BabbelAgent.forget`, `api/main.forget_by_voice`, `DELETE /memory/{id}` | `test_api::test_pause_and_forget_by_voice` |
@@ -36,6 +37,21 @@ The spec itself is the living doc: https://claude.ai/artifact/4vc64Mxc6SLH1zu31K
 | FR-53 | Export and delete | `/seniors/{id}/export`, `DELETE /seniors/{id}` | `test_api::test_export_and_delete` |
 | NFR-02 | Cost ≤ €0.07/min, alert > €0.08 | `core/cost`, `dashboard_data` | `test_cost` |
 | NFR-03 | Idempotent scheduler | `DueCall.idempotency_key`, unique constraint | `test_scheduler::test_no_double_call` |
-| NFR-08 | Dialect ASR quality | `asr/benchmark.py` | WER gate ≤ 25% |
+| NFR-11 | Dialect speech recognition | `asr/benchmark.py` | WER gate ≤ 25% |
 | NFR-09 | Swappable providers | `config.py`, `agent/providers.py` | — |
 | NFR-10 | All words in locale files | `locales/nl-BE.yaml`, `core/locale.py` | all prompt tests |
+
+## Not built yet
+
+| ID | Requirement (short) | Note |
+|---|---|---|
+| FR-07 | Voicemail detection | Needs answering-machine detection in the SIP/agent path |
+| FR-08 | Senior's own agreement on the first call | Stored via `POST /seniors/{id}/consents`; locale line and agent tool to add |
+| FR-23 | Someone else answers | Agent prompt + `answered_other` outcome |
+| FR-38 | Call back when the line drops during a flag | Scheduler/agent: one immediate call-back |
+| FR-43 | Missed-connection note | Locale line exists; sending logic and test TODO |
+| NFR-01 | Latency | Turn timing log TODO |
+| NFR-05 | Transcript retention job | TODO |
+| NFR-06 | Hashed, expiring SMS codes | `Contact.verification_code` is stored as plain text today |
+| NFR-08 | Langfuse tracing | TODO |
+

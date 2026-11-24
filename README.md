@@ -5,9 +5,9 @@ keeps their family in the loop, and escalates when something is wrong.
 
 This repo is the **first version (MVP)** for the February 2027 family pilot. Every requirement
 in the spec has an ID (FR-xx / NFR-xx); the code, tests and evals reference those IDs.
-See `specs/traceability.md` for the map from requirement to code to test.
+See `specs/spec.md` for the spec and `specs/traceability.md` for the map from requirement to code to test.
 
-- Spec (living doc): https://claude.ai/artifact/4vc64Mxc6SLH1zu31Kykbp
+- Spec: [`specs/spec.md`](specs/spec.md) (source of truth; the earlier claude.ai doc is a snapshot)
 - Build plan: https://claude.ai/artifact/5DZ5aWjh1ptNZZV9KLeTBX
 
 ## How it works
