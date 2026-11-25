@@ -5,7 +5,7 @@ keeps family in the loop and escalates when something is wrong. First version (M
 family pilot in February 2027. Solo founder: Bert (product manager, healthcare AI background).
 
 ## Source of truth
-- Spec: `specs/spec.md` — requirement IDs FR-xx / NFR-xx, open decisions D1–D16. Edit it here, in the
+- Spec: `specs/spec.md` — requirement IDs FR-xx / NFR-xx, open decisions D1–D18. Edit it here, in the
   same change as the code; never renumber or reuse an ID; add a change-log line. Rows tagged **New** are
   not built yet. `specs/traceability.md` maps each ID to code and tests. Keep both current.
   (The old claude.ai doc https://claude.ai/artifact/4vc64Mxc6SLH1zu31Kykbp is a read-only snapshot.)

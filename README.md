@@ -7,6 +7,29 @@ This repo is the **first version (MVP)** for the February 2027 family pilot. Eve
 in the spec has an ID (FR-xx / NFR-xx); the code, tests and evals reference those IDs.
 See `specs/spec.md` for the spec and `specs/traceability.md` for the map from requirement to code to test.
 
+## First goal: understand West- and East-Flemish older people
+
+Before anything else, Babbel must understand older people from West- and East-Flanders on a
+phone line, and answer them well. Everything else in this repo depends on it.
+
+```
+ senior (dialect, phone line) ──▶ speech to text, tuned for Flemish ──▶ frontier language model ──▶ voice
+                                  └── our own work: dialect data,     └── rented, swappable
+                                      evals, safety phrases, lexicon      (answers in soft Flemish)
+```
+
+- **Speech to text is where the dialect is solved, and where we build our own IP.**
+  The language model only sees text, so a mishearing ("gevallen" → "gebeld") can't be fixed downstream.
+  Start with the best off-the-shelf service, measure it on our own recordings (`asr/`), and
+  fine-tune only where it fails the gate (NFR-11).
+- **The language model is rented from a frontier provider, not built.** It is replaced every few
+  months, and building one that matches frontier reasoning, safety and tool use is out of reach.
+  It answers in soft standard Flemish (tussentaal), not in dialect.
+- **What we own:** the Flemish elderly speech test set and its safety phrases, any fine-tuned
+  dialect model, a dialect lexicon for both speech recognition and prompts, and the evals.
+
+How to measure and choose: [`docs/model-selection.md`](docs/model-selection.md).
+
 - Spec: [`specs/spec.md`](specs/spec.md) (source of truth; the earlier claude.ai doc is a snapshot)
 - Build plan: https://claude.ai/artifact/5DZ5aWjh1ptNZZV9KLeTBX
 
