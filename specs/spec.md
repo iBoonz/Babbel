@@ -300,9 +300,9 @@ Each has a default so the code can run today; change the default here and the co
 | D13 | Sources for proactive topics and local activities | RSS feeds per interest (regional news, sport, weather); activities curated by the operator per municipality | A licensed news API, municipality open data, UiTdatabank (UiTinVlaanderen) |
 | D14 | Partner integration for help requests (Helpper and others) | Request sent by SMS or e-mail to the family and the partner | Partner API once a partnership is signed |
 | D15 | **New.** Who covers the operator step outside Bert's working hours (FR-32 review within 1 hour, end of every chain) | Calls only between 08:00 and 20:00, so the chain ends with the care partner at night | A care partner on call, a paid answering service, a second operator |
+| D16 | **New.** Seniors who may not be able to consent (dementia) | Not in the pilot: the family admin confirms at onboarding that the senior can agree for themselves | Allow with a legal representative's consent, after legal advice |
 | D17 | **New.** Audio for training our own dialect speech model. FR-11 stores no call audio, so pilot calls can never become training data | Separate opt-in recordings only (Consent `dialect_recording`), never call audio | Also allow storing call audio from seniors who explicitly opt in, with a retention limit; licence public corpora (GCND, JASMIN-CGN) for commercial use |
 | D18 | **New.** Silence before replying versus latency. "Wait at least 1.5 s of silence" (Style rules) cannot meet NFR-01's 1.2 s median reply time | Undecided | A turn-detection model that waits longer only when the sentence sounds unfinished; or relax NFR-01 for older callers |
-| D16 | **New.** Seniors who may not be able to consent (dementia) | Not in the pilot: the family admin confirms at onboarding that the senior can agree for themselves | Allow with a legal representative's consent, after legal advice |
 
 ## How this spec is managed
 
