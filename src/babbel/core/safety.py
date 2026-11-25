@@ -13,6 +13,7 @@ import re
 from dataclasses import dataclass
 from enum import IntEnum
 
+from babbel.core.dialect import normalise_spelling
 from babbel.core.locale import load_locale
 
 
@@ -69,9 +70,13 @@ class KeywordDetector:
 
     def detect(self, utterance: str) -> list[SafetyFlag]:
         text = normalise(utterance)
+        # FR-19: also check the sentence with dialect spellings mapped to standard forms, so
+        # "ze meugen mie komen oaln" is caught like "ze mogen mij komen halen". Raw text first:
+        # normalising can only add matches, never remove one.
+        variants = {text, normalise_spelling(text)}
         flags: list[SafetyFlag] = []
         for rule_id, severity, patterns in self._rules:
-            if any(p.search(text) for p in patterns):
+            if any(p.search(v) for p in patterns for v in variants):
                 flags.append(SafetyFlag(rule_id, severity, utterance.strip(), "keyword"))
         return flags
 

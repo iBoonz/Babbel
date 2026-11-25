@@ -10,6 +10,7 @@ Whether the glossary goes into the live prompt is decided by the bake-off dialec
 
 from __future__ import annotations
 
+import re
 from functools import lru_cache
 from typing import Any
 
@@ -18,9 +19,11 @@ import yaml
 from babbel.core.locale import LOCALES_DIR, text
 
 REGIONS = {"vl", "wvl", "ovl"}
-CATEGORIES = {"grammar", "daily", "family", "feeling", "health", "home", "money", "false_friend"}
+CATEGORIES = {"grammar", "daily", "family", "feeling", "health", "home", "money", "time", "social",
+              "false_friend"}
 # Categories that matter most for understanding a senior correctly; listed first in the glossary.
-PRIORITY = ("health", "feeling", "false_friend", "money", "grammar", "daily", "home", "family")
+PRIORITY = ("health", "feeling", "false_friend", "money", "grammar", "time", "daily", "home", "family",
+            "social")
 
 
 @lru_cache(maxsize=4)
@@ -38,10 +41,11 @@ def entries(region: str | None = None, name: str = "vlaams") -> list[dict]:
     return [e for e in items if e["region"] in ("vl", region)]
 
 
-def glossary(region: str | None = None, locale: str = "nl-BE", limit: int = 120,
+def glossary(region: str | None = None, locale: str = "nl-BE", limit: int = 300,
              name: str = "vlaams") -> str:
-    """Compact prompt block: 'form / form = meaning' per line, most important categories first."""
-    ranked = sorted(entries(region, name), key=lambda e: PRIORITY.index(e["category"]))
+    """Compact prompt block: 'form / form = meaning' per line; safety words first, then by category."""
+    ranked = sorted(entries(region, name),
+                    key=lambda e: (e.get("safety") is None, PRIORITY.index(e["category"])))
     lines = [f"- {' / '.join(e['forms'])} = {e['standard']}" for e in ranked[:limit]]
     return text(locale, "dialect_glossary_header").rstrip() + "\n" + "\n".join(lines)
 
@@ -57,3 +61,24 @@ def stt_hints(region: str | None = None, limit: int = 40, name: str = "vlaams") 
             seen.add(form)
             out.append(form)
     return out[:limit]
+
+
+@lru_cache(maxsize=4)
+def _spelling_rules(name: str = "vlaams") -> tuple[tuple[re.Pattern[str], str], ...]:
+    pairs = [(form.lower(), rule["standard"]) for rule in load_lexicon(name).get("spelling", [])
+             for form in rule["dialect"]]
+    pairs.sort(key=lambda p: -len(p[0]))  # longest first: "nie mier" before "mier"
+    return tuple((re.compile(r"(?<![\w'])" + re.escape(form) + r"(?![\w'])"), std)
+                 for form, std in pairs)
+
+
+def normalise_spelling(text: str, name: str = "vlaams") -> str:
+    """Map dialect spellings to standard forms ("mie" -> "mij", "evalln" -> "gevallen"), so the
+    safety keyword rules also catch a transcript written the way the dialect sounds (FR-19,
+    FR-30 to FR-37). Expects lowercased text with normalised apostrophes.
+
+    Used only for safety matching, next to the raw text: a wrong mapping (e.g. "mier", which is
+    also the standard word for ant) can at most add a match, never remove one."""
+    for pattern, standard in _spelling_rules(name):
+        text = pattern.sub(standard, text)
+    return text

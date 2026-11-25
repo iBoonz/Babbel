@@ -163,11 +163,16 @@ safety_patterns:
     severity: urgent
     patterns:
       - "\\b(ik|'k|k)\\s+(ben|zijn|zen|zij)\\s+(gevallen|gevalle|gevolen)\\b"
-      - "\\bgevallen\\b"
+      - "(?<!slaap )\\bgevallen\\b"  # not: in slaap gevallen
+      - "(?<!slaap )(?<!sloap )\\bgev(a|o)ll?n\\b"  # West-Flemish spelling: gevalln, gevaln
       - "\\b(geraak|kan|kun|kan ik)\\s+(niet|nie|ni)\\s+(meer\\s+)?(recht|op|overeind|omhoog)\\b"
       - "\\bop de grond\\b"
       - "\\b(gekwetst|verwond|bloed)\\b"
-      - "\\b(uitgeschoven|uitgeschoten|uitgegleden|uitgeslipt|gestruikeld)\\b"
+      - "\\b(uitgeschoven|uutgeschoven|uitgeschoten|uitgegleden|uutgegleden|uitgeslipt|gestruikeld)\\b"
+      - "\\b(niet|nie|ni)\\s+(meer\\s+)?(opstaan|rechtstaan|overeind komen)\\b(?!\\s+om\\b)"
+      - "\\b(ik|'k|k)\\s+(lig|lag|ligge)\\b.{0,25}\\b(op|ip)\\s+(de|den)\\s+(grond|vloer)\\b"
+      - "\\bvan (mijn|men|m'n|myn|zijn|zyn|haar) (suus|sus) (gevallen|gevalln|gevaln)\\b"
+      - "\\bgabbe\\b"
       - "\\b(flauwgevallen|flauw gevallen|van (mijn|men|m'n) stokje gegaan)\\b"
   FR-31:
     severity: critical
@@ -175,7 +180,10 @@ safety_patterns:
       - "\\bpijn (op|in|aan) (mijn|men|m'n|mijne) borst\\b"
       - "\\bborstpijn\\b"
       - "\\b(kan|kun|krijg)\\s+(niet|nie|ni|geen)\\s+(goed\\s+)?(ademen|asem|adem)\\b"
-      - "\\b(benauwd|kortademig|ademnood)\\b"
+      - "\\b(benauwd|kortademig|ademnood)\\b(?!\\s+weer)"
+      - "\\b(krijg|kreeg|heb|had|'k èn|èn)\\s+geen\\s+(lucht|asem|adem)\\b"
+      - "\\b(pijn|zeer|druk|steken|gewicht)\\s+(op|in|aan)\\s+(mijn|men|m'n|mijne|myn)\\s+borst\\b"
+      - "\\b(arm|been|hand|kant)\\b.{0,25}\\b(niet|nie|ni)\\s+meer\\s+(bewegen|heffen|voelen|optillen)\\b"
       - "\\b(arm|been|kant) (is|voelt) (verlamd|lam|slap|dood)\\b"
       - "\\bscheve mond\\b"
       - "\\bkan (niet|nie) meer (goed )?praten\\b"
@@ -193,7 +201,12 @@ safety_patterns:
       - "\\bniemand (zou|gaat) (mij|me) missen\\b"
       - "\\bzelfmoord\\b"
       - "\\bhet heeft geen zin meer\\b"
-      - "\\b(het|'t|t)\\s+(moet|hoeft|mag)\\s+voor\\s+(mij|me)\\s+(niet|nie|ni)\\s+meer\\b"
+      - "\\b(het|'t|t)\\s+(moet|hoeft|mag)\\s+voor\\s+(mij|me)\\s+((allemaal|echt|toch|ook)\\s+)?(niet|nie|ni)\\s+meer\\b"
+      - "\\bliever (nooit|niet) meer wakker\\b"
+      - "\\b(het|'t|t)\\s+(mag|moet|mocht)\\s+voor\\s+(mij|me)\\s+gedaan\\s+zijn\\b"
+      - "\\b(ben|zijn|zen)\\b.{0,25}\\btot (last|een last)\\b"
+      - "\\bbeter\\b.{0,15}\\b(als|dat)\\s+(het|'t|t)\\s+gedaan\\s+(is|was)\\b"
+      - "\\bbeter (als|dat) ik (dood|er niet meer|er nie meer) (was|ben|ware)\\b"
       - "\\b(ze|hij|god)\\s+(mogen|mag)\\s+(mij|me)\\s+(komen\\s+)?halen\\b(?!\\s+(om|voor|naar|met|bij|aan|op))"
       - "\\b(zie|zien)\\s+(het|'t|t)\\s+(echt\\s+|helemaal\\s+)?(niet|nie|ni)\\s+meer\\s+zitten\\b"
   FR-33:
@@ -204,6 +217,7 @@ safety_patterns:
       - "\\bnieuw (gsm-?)?nummer\\b"
       - "\\b(de bank|de politie|iemand van de bank) (heeft|had) (gebeld|getelefoneerd)\\b"
       - "\\b(vroeg|vroegen|vraagt|vragen|wilde|wilden|wou|wouden)\\b.{0,40}\\b(bankkaart|itsme)\\b"
+      - "\\b(bankkaart|pincode|kaartlezer|itsme)\\b.{0,30}\\b(opsturen|doorsturen|afgeven|meegeven|doorgeven|bevestigen)\\b"
   FR-37:
     severity: low
     patterns:

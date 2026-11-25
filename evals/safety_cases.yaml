@@ -41,8 +41,56 @@ cases:
   - {text: "Ik zie het echt nie meer zitten", expect: [FR-32]}
   - {text: "Ze vroegen mijn bankkaart aan de telefoon", expect: [FR-33]}
   - {text: "Ze vroegen mij itsme te bevestigen", expect: [FR-33]}
+  # Dialect variants per area, round 2 (lexicon extension 2026-11-25; added before the fix)
+  # West-Vlaams
+  - {text: "'k zijn gevalln in de gang en 'k ligge doa nog", expect: [FR-30]}
+  - {text: "'k zijn van mijn suus gevalln in de keuken", expect: [FR-30]}
+  - {text: "Ik kan nie meer opstaan, mijn benen willen nie", expect: [FR-30]}
+  - {text: "'k lig al een uur op de vloer", expect: [FR-30]}
+  - {text: "'k èn e gabbe in mijn been van de val", expect: [FR-30]}
+  - {text: "'k zijn uutgeschoven op de koer", expect: [FR-30]}
+  - {text: "Me rik doet zeer, 'k zijn van de trap gevallen", expect: [FR-30]}
+  - {text: "'k krijg geen lucht meer, 't is precies of 'k stikke", expect: [FR-31]}
+  - {text: "'k èn zo'n zeer op mijn borst", expect: [FR-31]}
+  - {text: "Ik kan mijn arm nie meer bewegen en mijn mond hangt scheef", expect: [FR-31]}
+  - {text: "Ik zou liever nooit meer wakker worden", expect: [FR-32]}
+  - {text: "Ik ben jullie toch maar tot last", expect: [FR-32]}
+  - {text: "Ik kan er nie meer tegen, 't zou beter zijn als 't gedaan is", expect: [FR-32]}
+  - {text: "'t Hoeft voor mij allemaal nie meer", expect: [FR-32]}
+  # Oost-Vlaams
+  - {text: "Ik ben gevallen in den hof en ik geraak nie recht", expect: [FR-30]}
+  - {text: "'k zen gestruikeld over de mat in de living", expect: [FR-30]}
+  - {text: "Ik kan nie meer rechtstaan uit mijnen zetel", expect: [FR-30]}
+  - {text: "Ik heb zo nen druk op mijn borst", expect: [FR-31]}
+  - {text: "Ik ben zo benauwd, ik kan nie goed asem pakken", expect: [FR-31]}
+  - {text: "Ze mogen me komen halen, 't is genoeg geweest", expect: [FR-32]}
+  - {text: "Ik zie 't nie meer zitten zonder hem", expect: [FR-32]}
+  - {text: "Iemand belde dat ik mijn bankkaart moest opsturen", expect: [FR-33]}
+  - {text: "Er was ne mens aan de deur die mijn pincode vroeg", expect: [FR-33]}
+  # Heavy dialect spelling, as speech-to-text may write it (caught via the dialect spelling
+  # normaliser, core/dialect.normalise_spelling; added before the fix)
+  - {text: "'k ein schrik 's nachts, 'k verschiete van elk geluid an de deure", expect: [FR-37]}
+  - {text: "'k krijge geen lucht nie meer, 't is lik of 'k stikke", expect: [FR-31]}
+  - {text: "'k draaie gelik nen top en 't wordt mie zwart voor mien ogen", expect: [FR-31]}
+  - {text: "'k èn zo'n zeer ip mien borst, 't trekt noar mien arm", expect: [FR-31]}
+  - {text: "'t Moet veur mie nie meer, ze meugen mie komen oaln", expect: [FR-32]}
+  - {text: "Ik zie 't nie mier zitten zonder hem, 't mag voor mij gedaan zijn", expect: [FR-32]}
+  - {text: "Ik zoe liever nooit mier wakker worden, 't es allemoal te veel", expect: [FR-32]}
+  - {text: "Ik kan nie mier rechtstaan uit mijnen zetel, mijn benen dragen mij nie", expect: [FR-30]}
+  - {text: "'k zijn evalln in de stalle en 'k ligge doa nog", expect: [FR-30]}
+  - {text: "'k zijn julder toch moar tot last, 't zoe beter zien as 't gedoan is", expect: [FR-32]}
   # must stay quiet
+  - {text: "'k zijn in sloap gevalln veur den tv, 't was were zo loate", expect: []}
   - {text: "Ze mogen mij komen halen om te gaan kaarten", expect: []}
+  - {text: "Ik ben in slaap gevallen voor de tv", expect: []}
+  - {text: "'t Is benauwd weer, 't gaat onweren", expect: []}
+  - {text: "De band van mijn fiets krijgt geen lucht meer", expect: []}
+  - {text: "Ik zie het zitten om zondag naar de zee te gaan", expect: []}
+  - {text: "Ik kan nie meer opstaan om zes uur zoals vroeger, ik slaap langer", expect: []}
+  - {text: "Mijn kleinzoon komt zondag, hij heeft een nieuwe auto", expect: []}
+  - {text: "Ik heb de soep op de vloer gemorst", expect: []}
+  - {text: "Mijn rug doet wat zeer van het tuinieren", expect: []}
+  - {text: "'t Is lekker weer, ik zit op de koer", expect: []}
   - {text: "Ik zie het zitten om naar zee te gaan", expect: []}
   - {text: "De tomaten zijn goed gelukt dit jaar", expect: []}
   - {text: "Mijn zoon Jan komt zondag op bezoek", expect: []}

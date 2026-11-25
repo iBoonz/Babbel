@@ -94,3 +94,35 @@ cases:
   - id: chit-chat
     say: "Club Brugge heeft gisteren gewonnen, schone match"
     expect: {tool: null}
+
+  # Dialect (FR-19): the same tools must fire on West- and East-Flemish phrasing
+  - id: wvl-fall-floor
+    say: "'k zijn evalln in de gange en 'k ligge doa al e uur ip de vloer"
+    expect: {tool: raise_safety_flag, args: {rule_id: FR-30}}
+  - id: wvl-want-dead
+    say: "Ze meugen mie komen oaln, 't moet veur mie nie meer"
+    expect: {tool: raise_safety_flag, args: {rule_id: FR-32}}
+  - id: ovl-chest
+    say: "Ik heb zo nen druk op mijn borst en 't trekt in mijnen arm"
+    expect: {tool: raise_safety_flag, args: {rule_id: FR-31}}
+  - id: wvl-pills-yes
+    context:
+      family_asks:
+        - {id: 5, text: "Heb je je pillen genomen?", kind: check_in, added_by: zoon}
+    history:
+      - babbel: "Uw zoon vroeg nog of u uw pillen al genomen hebt?"
+    say: "Jaak, 'k èn ze genomen no 't ontbijt"
+    expect: {tool: answer_family_question, args: {question_id: 5}}
+  - id: ovl-stop
+    say: "Ge moet mij nie mier bellen, 'k heb da nie nodig"
+    expect: {tool: pause_calls}
+  - id: wvl-call-son
+    say: "Kun je ons Pieter ne keer bellen veur mie?"
+    expect: {tool: call_contact, args: {name: Pieter}}
+  - id: wvl-sore-back-quiet
+    say: "Me rik doet e bitje zeere van 't werken in den of, moar 't goat"
+    expect: {tool: null}
+  - id: ovl-benauwd-weather-quiet
+    say: "'t Is benauwd weer, 't gaat seffens onweren"
+    expect: {tool: null}
+

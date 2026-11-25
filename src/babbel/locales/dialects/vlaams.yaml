@@ -2,171 +2,369 @@
 #
 # What it is for:
 #   1. speech-to-text hints: words a recogniser should expect from older West- and East-Flemish callers;
-#   2. a glossary for the language model, so a transcript like "'k zijn uitgeschoven" is understood;
-#   3. eval cases: evals/dialect_cases.yaml tests whether models understand these words, with
-#      and without the glossary (babbel-bakeoff --suites dialect).
+#   2. a glossary for the language model, so a transcript like "'k zijn uutgeschoven" is understood;
+#   3. eval cases: evals/dialect_cases.yaml tests whether models understand these words, with and
+#      without the glossary (babbel-bakeoff --suites dialect);
+#   4. safety: every dialect safety phrase here must trigger the keyword rules, or be marked
+#      classifier_only (tests/test_dialect.py).
 #
-# How it is written:
-#   forms     how the word appears in a transcript: dialect spelling first, then variants
+# Entry fields:
+#   forms     how the word can appear in a transcript: dialect spelling first, then variants
 #   standard  the meaning in standard Dutch
-#   region    vl (heard all over Flanders, also in tussentaal), wvl, ovl
-#   category  grammar | daily | family | feeling | health | home | money | false_friend
-#   safety    optional: the rule this word can point to (FR-30 to FR-37). Safety meaning goes in
-#             safety_patterns in nl-BE.yaml; this list only explains words, it raises nothing itself.
+#   region    vl (all over Flanders, also tussentaal), wvl (West-Vlaams), ovl (Oost-Vlaams)
+#   area      optional: a narrower area from `regions` when a source ties the word to towns
+#   category  grammar | daily | family | feeling | health | home | money | time | social | false_friend
+#   safety    optional: the rule the word can point to (FR-30 to FR-37). This list explains words;
+#             the keyword rules in nl-BE.yaml and the LLM classifier raise the flags.
+#   classifier_only  the keyword rules deliberately do not catch it (too broad, or usually about
+#             the past or about someone else); the LLM classifier must
+#   src       ids from `sources` that mention this word. No src = written from general knowledge.
+#   checked   true once a native speaker from the region confirmed form, meaning and region
 #   example   one sentence as an older person might say it
-#   classifier_only  true when the keyword rules deliberately do not catch it (too broad or often
-#             about the past); the LLM classifier must. Every other safety example must trigger
-#             the keyword rules (tests/test_dialect.py).
 #
-# STATUS: DRAFT. Written by hand from general knowledge, not copied from a dictionary, and not
-# yet checked: the sources below could not be reached when this list was made. Before relying on
-# an entry, check it against the Woordenboek van de Vlaamse Dialecten and a native speaker from
-# the region, then set checked: true on the entry. Regions in particular are approximate.
+# STATUS: DRAFT, not yet checked by native speakers. Sourced entries come from search-result
+# summaries of the sources below (the pages themselves could not be opened when this was written),
+# so spellings may differ from the originals. Review with: python -m babbel.evals.lexicon_review
+# export, give the CSV to a native speaker per region, then import it back.
 
 sources:
-  - name: Woordenboek van de Vlaamse Dialecten (WVD), Ghent University
-    url: https://www.dialectloket.be
-    note: West- and East-Flemish dialect dictionary; consult per word, do not bulk-copy
-  - name: Wikipedia, West-Vlaams
-    url: https://nl.wikipedia.org/wiki/West-Vlaams
-  - name: Wikipedia, Oost-Vlaams
-    url: https://nl.wikipedia.org/wiki/Oost-Vlaams
-  - name: GCND, Parsed Corpus of Southern Dutch Dialects (Ghent University)
-    url: https://www.timemachine.eu/ltm-projects/the-parsed-corpus-of-southern-dutch-dialects-gcnd/
-    note: 430 h of older dialect speakers; non-commercial research licence (spec D17)
+  - {id: dialectloket-wvl, name: "Dialectloket (Ghent University), West-Vlaams", url: "https://www.dialectloket.be/tekst/dialectologie/dialecten-in-de-zuidelijke-nederlanden/west-vlaams/"}
+  - {id: dialectloket-ovl, name: "Dialectloket (Ghent University), Oost-Vlaams", url: "https://www.dialectloket.be/tekst/dialectologie/dialecten-in-de-zuidelijke-nederlanden/oost-vlaams/"}
+  - {id: vls-woorden, name: "Vlaamse Wikipedia, Typische West-Vlamsche woordn", url: "https://vls.wikipedia.org/wiki/Typische_West-Vlamsche_woordn"}
+  - {id: vls-uitdrukkingen, name: "Vlaamse Wikipedia, Typische West-Vlamsche uutdrukkiengn", url: "https://vls.wikipedia.org/wiki/Wikipedia:Typische_West-Vlamsche_uutdrukkiengn"}
+  - {id: vls-tabel, name: "Vlaamse Wikipedia, Dialect Tabel (Brugs/Kortrijks)", url: "https://vls.m.wikipedia.org/wiki/Wikipedia:West-Vlams/Dialect_Tabel_Arr"}
+  - {id: wvl-blog, name: "West-Vloams voor beginners, Woordenschat", url: "https://west-vloams.blogspot.com/2014/02/woordenschat.html"}
+  - {id: mwb-wvl, name: "Mijnwoordenboek, West-Vlaams (user-compiled)", url: "https://www.mijnwoordenboek.nl/dialect/West-Vlaams"}
+  - {id: mwb-gents, name: "Mijnwoordenboek, Gents (user-compiled)", url: "https://www.mijnwoordenboek.nl/dialect/Gents"}
+  - {id: gentdekuip, name: "Gent de Kuip, 1266 Gentse woorden", url: "https://gentdekuip.com/dialect/"}
+  - {id: nlwiki-wvl, name: "Wikipedia, West-Vlaams", url: "https://nl.wikipedia.org/wiki/West-Vlaams"}
+  - {id: nlwiki-h, name: "Wikipedia, H-deletie", url: "https://nl.wikipedia.org/wiki/H-deletie"}
+  - {id: goesting-wvl, name: "Goesting in Taal, West-Vlamingen begrijpen", url: "https://www.goestingintaal.be/nl/lokale-accenten-en-dialecten-west-vlaams/"}
+  - {id: goesting-ovl, name: "Goesting in Taal, Oost-Vlaams", url: "https://www.goestingintaal.be/nl/lokale-accenten-en-dialecten-oost-vlaams/"}
+  - {id: fu-berlin, name: "FU Berlin, Structuur en geschiedenis van het Nederlands: West-Vlaams", url: "https://neon.niederlandistik.fu-berlin.de/nl/nedling/langvar/westvlaams"}
+  - {id: wikibooks-wvl, name: "Wikibooks, West-Vlaams grammatica", url: "https://nl.wikibooks.org/wiki/West-Vlaams/Grammatica_1:_Tegenwoordige_tijd"}
+  - {id: taal-tongval, name: "Taal en Tongval 2002-2003, pronominale substitutie in het West-Vlaams", url: "https://journal-archive.aup.nl/taal-en-tongval/jrg_2002-2003_thema_1516_-_pronominale_substitutie_na_voorzetsel.pdf"}
+  - {id: gents-telenet, name: "Dialect Gent (overzicht uitspraak)", url: "http://users.telenet.be/koertvandevelde/theorie/ler6dtaaldialectGent.htm"}
+  - {id: dbnl-kortrijk, name: "DBNL, Het Kortrijks dialekt van F.A. Snellaert (De Leiegouw 1972)", url: "https://www.dbnl.org/tekst/_lei004197201_01/_lei004197201_01_0011.php"}
+  - {id: variaties, name: "Variaties op je bord (dialect voor eten en drinken)", url: "https://www.variaties.be/wp-content/uploads/2017/03/variaties-op-je-bord.pdf"}
+  - {id: dialectenboek, name: "Het Dialectenboek 7 (2003)", url: "https://nederlandsedialecten.org/wp-content/uploads/2015/09/2003_het-dialectenboek-7.pdf"}
+  - {id: taaladvies, name: "Vlaamse overheid Taaladvies, Tussentaal: kenmerken", url: "https://www.vlaanderen.be/taaladvies/taaladviezen/tussentaal-kenmerken"}
+  - {id: vlaams-wb, name: "Vlaams Woordenboek (user-compiled)", url: "https://www.vlaamswoordenboek.be"}
+  - {id: weliswaar, name: "Weliswaar, 'Ze mogen mij komen halen'", url: "https://www.weliswaar.be/ouderen/ze-mogen-mij-komen-halen"}
+  - {id: zelfmoord1813, name: "Zelfmoordlijn 1813 / VEDS, richtlijn detectie en behandeling suïcidaal gedrag", url: "https://www.zelfmoord1813.be/files/richtlijn-detectie-en-behandeling.pdf"}
+  - {id: gcnd, name: "GCND, Parsed Corpus of Southern Dutch Dialects (Ghent University)", url: "https://www.timemachine.eu/ltm-projects/the-parsed-corpus-of-southern-dutch-dialects-gcnd/", note: "430 h of older dialect speakers; non-commercial research licence (spec D17)"}
 
 # Dialect areas, for the `dialect` column in asr/data/manifest.csv and for choosing test speakers.
-# Towns are examples. Borders are gradual; Aalter and the Meetjesland sit between West and East.
+# Towns are examples. Borders are gradual; Maldegem and the Meetjesland are a transition area
+# with the coastal West-Flemish dialects (dialectloket-ovl).
 regions:
   wvl:
     name: West-Vlaams
     areas:
-      - {id: wvl-brugs, name: "Brugs en Brugse Ommeland (Houtland)", towns: [Brugge, Torhout, Tielt, Oostkamp]}
-      - {id: wvl-kust, name: "Kust", towns: [Oostende, Blankenberge, Knokke-Heist]}
-      - {id: wvl-westhoek, name: "Westhoek", towns: [Ieper, Poperinge, Veurne, Diksmuide]}
-      - {id: wvl-zuid, name: "Zuid-West-Vlaams (Leiestreek, Kortrijk)", towns: [Kortrijk, Waregem, Menen, Roeselare]}
+      - {id: wvl-brugs, name: "Brugs en Brugse Ommeland (Houtland)", towns: [Brugge, Torhout, Tielt, Oostkamp, Beernem]}
+      - {id: wvl-kust, name: "Kust", towns: [Oostende, Blankenberge, Knokke-Heist, De Haan, Nieuwpoort]}
+      - {id: wvl-westhoek, name: "Westhoek", towns: [Ieper, Poperinge, Veurne, Diksmuide, Wervik]}
+      - {id: wvl-zuid, name: "Zuid-West-Vlaams (Kortrijk, Leiestreek)", towns: [Kortrijk, Waregem, Menen, Harelbeke, Roeselare, Izegem]}
   ovl:
     name: Oost-Vlaams
     areas:
       - {id: ovl-gents, name: "Gents", towns: [Gent]}
-      - {id: ovl-meetjesland, name: "Meetjesland", towns: [Eeklo, Maldegem, Aalter]}
-      - {id: ovl-leie, name: "Leiestreek", towns: [Deinze, Nevele]}
-      - {id: ovl-waas, name: "Waasland", towns: [Sint-Niklaas, Lokeren, Temse]}
-      - {id: ovl-dender, name: "Dender (Aalsters)", towns: [Aalst, Dendermonde, Ninove]}
+      - {id: ovl-meetjesland, name: "Meetjesland", towns: [Eeklo, Maldegem, Aalter, Assenede]}
+      - {id: ovl-leie, name: "Leiestreek", towns: [Deinze, Nevele, Sint-Martens-Latem]}
+      - {id: ovl-waas, name: "Waasland", towns: [Sint-Niklaas, Lokeren, Temse, Beveren]}
+      - {id: ovl-dender, name: "Dender (Aalsters)", towns: [Aalst, Dendermonde, Ninove, Geraardsbergen]}
       - {id: ovl-zuid, name: "Zuid-Oost-Vlaams (Vlaamse Ardennen)", towns: [Oudenaarde, Ronse, Zottegem]}
 
-# Sound patterns that explain why a transcript looks odd. Speech-to-text may write what it hears.
+# Sound patterns: why a transcript looks odd, and what speech-to-text may mishear.
 pronunciation:
-  - {id: g-as-h, region: wvl, rule: "g sounds like h, and h is often dropped", example: "goed -> 'hoed'; huis -> 'uus'"}
+  - {id: g-as-h, region: wvl, src: [nlwiki-wvl, nlwiki-h, goesting-wvl], rule: "g is pronounced as h (also ch)", example: "Brugge -> 'Bruhhe'; goed -> 'hoed'"}
+  - {id: h-deletion, region: vl, src: [nlwiki-h, taaladvies], rule: "initial h is dropped", example: "huis -> 'uis' / 'uus'; hebben -> 'èbben'"}
+  - {id: participle-g, region: wvl, area: wvl-westhoek, src: [nlwiki-wvl], rule: "Westhoek: no ge- in past participles", example: "gedaan -> 'edaan'; gezien -> 'ezien'"}
+  - {id: final-t, region: vl, src: [taaladvies], rule: "final -t is dropped", example: "dat -> 'da'; niet -> 'nie'"}
+  - {id: final-en, region: wvl, rule: "final -en loses its -e, or the -n", example: "gevallen -> 'gevalln' or 'gevalle'"}
+  - {id: kortrijk-endings, region: wvl, area: wvl-zuid, src: [dialectenboek], rule: "Kortrijk drops final sounds even more", example: "Kortrijk -> 'Kortrik'"}
+  - {id: open-vowels, region: wvl, src: [fu-berlin], rule: "short e, i and u are more open than in standard Dutch", example: "ik -> 'èk'; put -> 'pot'"}
   - {id: ij-as-ie, region: wvl, rule: "ij sounds like ie", example: "mijn -> 'mien'; tijd -> 'tied'"}
-  - {id: ui-as-uu, region: wvl, rule: "ui sounds like uu", example: "huis -> 'huus'; buiten -> 'buten'"}
-  - {id: final-n, region: vl, rule: "final -n and final -t are dropped", example: "gevallen -> 'gevalle'; niet -> 'nie'"}
-  - {id: k-clitic, region: vl, rule: "ik becomes 'k, glued to the verb", example: "ik zijn -> 'kzijn'; ik weet niet -> 'kweet nie'"}
+  - {id: ui-as-uu, region: wvl, rule: "ui sounds like uu", example: "huis -> 'uus'; buiten -> 'buten'"}
+  - {id: oa-diphthong, region: wvl, rule: "long a sounds like oa", example: "water -> 'woater'; straat -> 'stroate'"}
+  - {id: k-clitic, region: vl, src: [taaladvies], rule: "ik becomes 'k glued to the verb, or kik/ekik with emphasis", example: "ik weet niet -> 'kweet nie'; ik ben -> 'kzijn'"}
   - {id: conjugated-yes, region: wvl, rule: "yes and no take the subject", example: "'jaak' (ja ik), 'jaj' (ja jij), 'jat' (ja het), 'neenk' (nee ik)"}
-  - {id: oa-diphthong, region: wvl, rule: "a sounds like oa", example: "water -> 'woater'; straat -> 'stroate'"}
+  - {id: double-subject, region: wvl, src: [nlwiki-wvl], rule: "the subject is repeated after the verb", example: "'je kiekt gie' (jij kijkt); 'k èn ik' (ik heb)"}
+  - {id: gents-long, region: ovl, area: ovl-gents, src: [gents-telenet], rule: "Gents: all vowels long and flat", example: "zat -> 'zaat'; zot -> 'zoot'"}
+  - {id: gents-huis, region: ovl, area: ovl-gents, src: [gents-telenet], rule: "Gents: ui becomes oa", example: "huis -> 'oas'"}
+  - {id: gents-r, region: ovl, area: ovl-gents, src: [gents-telenet], rule: "Gents: uvular (French-like) r", example: "rood with a back r"}
+  - {id: voiced-ptk, region: ovl, src: [dialectloket-ovl], rule: "p, t, k between vowels become voiced", example: "praten -> 'praden'"}
+  - {id: g-drop-nasal, region: ovl, src: [dialectloket-ovl], rule: "g or ng between vowels can drop, leaving a long nasal vowel", example: "zingen -> 'zi-en' (nasal)"}
+  - {id: ovl-ie-uu, region: ovl, src: [dialectloket-ovl], rule: "old long ie and uu become èè and ui", example: "tijd -> 'tèèd'; huis -> 'uis'"}
+  - {id: ovl-ue, region: ovl, area: ovl-meetjesland, src: [dialectloket-ovl], rule: "Maldegem and east Waasland use 'uə' where other East-Flemish has a long u", example: "duur -> 'duər'"}
+  - {id: gij-system, region: vl, src: [taaladvies, taal-tongval], rule: "ge/gij/u instead of je/jij; the West-Flemish coast uses je/joe(n)", example: "Hebt ge goed geslapen? (Kust: 'Ej je goed eslapen?')"}
+  - {id: extra-dat, region: vl, src: [taaladvies], rule: "an extra 'dat' after question words and conjunctions", example: "Ik weet nie wie da 't was"}
+  - {id: diminutive-ke, region: vl, src: [taaladvies], rule: "diminutive -ke instead of -je", example: "een pilleke, een tasse koffie, efkes"}
+
+# Dialect spellings mapped to standard forms before the safety keyword rules run
+# (core/dialect.normalise_spelling, used by core/safety.KeywordDetector on top of the raw text).
+# Whole words or short phrases only, and only where the mapping is unambiguous in a senior's
+# sentence. Every addition needs a case in evals/safety_cases.yaml and `make evals`.
+spelling:
+  - {dialect: ["'k ein", "k ein", "'k èn", "k èn", "kèn"], standard: "'k heb"}
+  - {dialect: ["mie"], standard: "mij"}
+  - {dialect: ["mien", "mijne", "mijnen"], standard: "mijn"}
+  - {dialect: ["mier"], standard: "meer"}
+  - {dialect: ["veur", "vur"], standard: "voor"}
+  - {dialect: ["meugen", "moogn"], standard: "mogen"}
+  - {dialect: ["oaln", "hoaln", "oalen", "hoalen"], standard: "halen"}
+  - {dialect: ["zoe", "zoen"], standard: "zou"}
+  - {dialect: ["krijge", "krijgn"], standard: "krijg"}
+  - {dialect: ["ip"], standard: "op"}
+  - {dialect: ["sloap", "slop"], standard: "slaap"}
+  - {dialect: ["es"], standard: "is"}
+  - {dialect: ["noar", "nor"], standard: "naar"}
+  - {dialect: ["doar", "doa"], standard: "daar"}
+  - {dialect: ["geroak", "geroake", "geraoke"], standard: "geraak"}
+  - {dialect: ["evalln", "evallen", "evaln", "gevalln", "gevaln", "gevolln"], standard: "gevallen"}
+  - {dialect: ["ligge", "liggn"], standard: "lig"}
+  - {dialect: ["oofd", "oofde"], standard: "hoofd"}
+  - {dialect: ["uus", "oas"], standard: "huis"}
+  - {dialect: ["allemoal", "olles"], standard: "allemaal"}
+  - {dialect: ["gedoan", "edoan", "edaan"], standard: "gedaan"}
+  - {dialect: ["julder", "gidder", "hulder", "hunder"], standard: "jullie"}
+  - {dialect: ["moar"], standard: "maar"}
+  - {dialect: ["zeere", "zjeer", "zjeere"], standard: "zeer"}
+  - {dialect: ["nie meer", "nie mier", "ni meer"], standard: "niet meer"}
+
+# Pronouns and verb forms (West-Flemish). Sources give different spellings; listed as found.
+grammar:
+  pronouns_wvl:
+    src: [wikibooks-wvl, taal-tongval]
+    ik: ["'k", "ik", "kik"]
+    jij: ["ge", "gie", "je"]
+    hij: ["ie", "em", "je"]
+    zij_enkelvoud: ["ze", "zie"]
+    wij: ["me", "widder", "wulder", "wunder"]
+    jullie: ["gidder", "hulder", "hunder"]
+    zij_meervoud: ["ze", "zidder", "zulder", "zunder"]
+  verbs_wvl:
+    src: [wikibooks-wvl, fu-berlin]
+    zijn: ["ik zijn / 'k zin (ik ben)", "ge zijt gie (jij bent)", "j'is ie (hij is)", "me zijn widder (wij zijn)"]
+    hebben: ["'k èn ik / kèn (ik heb)", "g'èt gie (jij hebt)", "j'èt ie (hij heeft)", "m'èn widder (wij hebben)"]
 
 entries:
-  # --- grammar: pronouns, verbs, small words ---------------------------------------------
-  - {forms: ["ge", "gij", "gie"], standard: "je, jij, u", region: vl, category: grammar, example: "Hebt ge goed geslapen?"}
-  - {forms: ["'k", "k"], standard: "ik", region: vl, category: grammar, example: "'k weet het nie"}
-  - {forms: ["ik zijn", "'k zijn", "kzijn", "'k zin"], standard: "ik ben", region: wvl, category: grammar, example: "'k zijn moe vandaag"}
-  - {forms: ["nie", "ni"], standard: "niet", region: vl, category: grammar, example: "Da gaat nie"}
-  - {forms: ["da", "dat"], standard: "dat", region: vl, category: grammar, example: "Da's waar"}
-  - {forms: ["nen", "ne"], standard: "een (mannelijk)", region: vl, category: grammar, example: "Ik heb nen nieuwen zetel"}
-  - {forms: ["e"], standard: "een", region: wvl, category: grammar, example: "'k ha e koffie gedronken"}
+  # ---------------------------------------------------------------- grammar and small words
+  - {forms: ["ge", "gij", "gie"], standard: "je, jij, u", region: vl, category: grammar, src: [taaladvies, wikibooks-wvl], example: "Hebt ge goed geslapen?"}
+  - {forms: ["'k", "k", "kik", "ekik"], standard: "ik", region: vl, category: grammar, src: [taaladvies], example: "'k weet het nie"}
+  - {forms: ["ik zijn", "'k zijn", "kzijn", "'k zin"], standard: "ik ben", region: wvl, category: grammar, src: [fu-berlin], example: "'k zijn moe vandaag"}
+  - {forms: ["'k èn", "kèn", "'k en"], standard: "ik heb", region: wvl, category: grammar, src: [wikibooks-wvl], example: "'k èn slecht geslapen"}
+  - {forms: ["j'èt", "jet", "j'eet"], standard: "hij heeft", region: wvl, category: grammar, src: [wikibooks-wvl], example: "J'èt gebeld gisteren"}
+  - {forms: ["widder", "wulder", "wunder"], standard: "wij", region: wvl, category: grammar, src: [wikibooks-wvl], example: "Wunder goan zondag noar de mis"}
+  - {forms: ["gidder", "hulder", "hunder"], standard: "jullie", region: wvl, category: grammar, src: [wikibooks-wvl], example: "Komt hulder ook?"}
+  - {forms: ["zidder", "zulder", "zunder"], standard: "zij (meervoud)", region: wvl, category: grammar, src: [wikibooks-wvl], example: "Zulder komen seffens"}
+  - {forms: ["nie", "ni"], standard: "niet", region: vl, category: grammar, src: [taaladvies], example: "Da gaat nie"}
+  - {forms: ["da"], standard: "dat", region: vl, category: grammar, src: [taaladvies], example: "Da's waar"}
+  - {forms: ["nen", "ne"], standard: "een (mannelijk)", region: vl, category: grammar, src: [taaladvies], example: "Ik heb nen nieuwen zetel"}
+  - {forms: ["e"], standard: "een", region: wvl, category: grammar, src: [taaladvies], example: "'k ha e koffie gedronken"}
   - {forms: ["ip"], standard: "op", region: wvl, category: grammar, example: "'k zijn ip mijn gat gevallen"}
-  - {forms: ["jaak", "joak", "jaj", "jat"], standard: "ja (ik / jij / het)", region: wvl, category: grammar, example: "Jaak, 'k hebben ze genomen"}
-  - {forms: ["neenk", "nink"], standard: "nee (ik)", region: wvl, category: grammar, example: "Neenk, 'k hebben nie geslapen"}
+  - {forms: ["jaak", "joak", "jaj", "jat"], standard: "ja (ik / jij / het)", region: wvl, category: grammar, example: "Jaak, 'k èn ze genomen"}
+  - {forms: ["neenk", "nink"], standard: "nee (ik)", region: wvl, category: grammar, example: "Neenk, 'k èn nie geslapen"}
   - {forms: ["awel", "ewel"], standard: "wel, nou", region: vl, category: grammar, example: "Awel, 't is hier stillekes"}
   - {forms: ["allee", "allez"], standard: "kom, toe nou, ach", region: vl, category: grammar, example: "Allee, da meent ge nie"}
   - {forms: ["amai", "amaai"], standard: "tjonge, wauw", region: vl, category: grammar, example: "Amai, da was schoon"}
-  - {forms: ["lijk"], standard: "zoals", region: vl, category: grammar, example: "Lijk ik al zei"}
-  - {forms: ["ne keer", "e keer"], standard: "eens", region: vl, category: grammar, example: "Kom ne keer langs"}
-  - {forms: ["efkes", "eventjes"], standard: "even", region: vl, category: grammar, example: "Wacht efkes"}
+  - {forms: ["lijk", "gelijk", "gelik"], standard: "zoals, als", region: vl, category: grammar, src: [mwb-wvl], example: "'k draaie gelik nen top"}
+  - {forms: ["ne keer", "nekeer", "e keer"], standard: "eens", region: vl, category: grammar, src: [taaladvies], example: "Kom ne keer langs"}
+  - {forms: ["efkes"], standard: "even", region: vl, category: grammar, example: "Wacht efkes"}
   - {forms: ["were", "weere"], standard: "weer, opnieuw", region: wvl, category: grammar, example: "'t Is were koud"}
   - {forms: ["pertang"], standard: "nochtans, toch", region: vl, category: grammar, example: "Pertang had ik het gezegd"}
   - {forms: ["zeker en vast"], standard: "zeker", region: vl, category: grammar, example: "Zeker en vast kom ik"}
+  - {forms: ["zulle"], standard: "hoor (versterking)", region: vl, category: grammar, example: "'t Is goed zulle"}
+  - {forms: ["ewaar", "e woar"], standard: "nietwaar", region: wvl, category: grammar, example: "'t Is koud, ewaar?"}
+  - {forms: ["binst"], standard: "tijdens, terwijl", region: vl, category: grammar, example: "Binst de mis viel ik in slaap"}
+  - {forms: ["altope", "oltôpe"], standard: "alles samen, in totaal", region: wvl, category: grammar, src: [vls-woorden], example: "'t Is altope gekocht"}
+  - {forms: ["tertn", "terten"], standard: "voorzichtig, stapje voor stapje", region: wvl, category: grammar, src: [vls-woorden], example: "'k goan tertn noar de keuken"}
 
-  # --- daily life and time -------------------------------------------------------------
-  - {forms: ["seffens", "sebiet", "subiet"], standard: "straks, zo meteen", region: vl, category: daily, example: "Mijn dochter komt seffens"}
-  - {forms: ["dikkels", "dikwijls"], standard: "vaak", region: vl, category: daily, example: "Ik ga dikkels naar de markt"}
-  - {forms: ["rap"], standard: "snel", region: vl, category: daily, example: "Da ging rap"}
+  # ---------------------------------------------------------------- time
+  - {forms: ["seffens", "sebiet", "subiet"], standard: "straks, zo meteen, direct", region: vl, category: time, src: [mwb-gents, vlaams-wb], example: "Mijn dochter komt seffens"}
+  - {forms: ["lest", "laatst"], standard: "onlangs", region: vl, category: time, example: "Lest was ik bij de dokter"}
+  - {forms: ["verleden week"], standard: "vorige week", region: vl, category: time, example: "Verleden week was ze hier"}
+  - {forms: ["de voormiddag"], standard: "de ochtend", region: vl, category: time, example: "In de voormiddag doe ik de was"}
+  - {forms: ["noen", "den noen"], standard: "het middaguur", region: vl, category: time, example: "Rond den noen eten we"}
+  - {forms: ["den achternoen", "achternoen", "namiddag"], standard: "de middag (na de lunch)", region: vl, category: time, example: "In den achternoen slaap ik efkes"}
+  - {forms: ["dikkels", "dikwijls"], standard: "vaak", region: vl, category: time, example: "Ik ga dikkels naar de markt"}
+  - {forms: ["rap"], standard: "snel", region: vl, category: time, example: "Da ging rap"}
+  - {forms: ["tegen dat"], standard: "tegen de tijd dat", region: vl, category: time, example: "Tegen dat ge hier zijt, is 't donker"}
+
+  # ---------------------------------------------------------------- daily life
   - {forms: ["geren", "geern", "gere"], standard: "graag", region: wvl, category: daily, example: "'k zien da geren"}
   - {forms: ["goesting", "goeste"], standard: "zin, trek", region: vl, category: daily, example: "Ik heb goesting in een koffie"}
   - {forms: ["nen hoop", "e hoop"], standard: "veel", region: vl, category: daily, example: "Nen hoop volk op de markt"}
   - {forms: ["ferm"], standard: "erg, flink", region: vl, category: daily, example: "'t Was ferm koud"}
   - {forms: ["gans", "ganse"], standard: "heel, hele", region: vl, category: daily, example: "De ganse dag alleen"}
   - {forms: ["plezant"], standard: "leuk, aangenaam", region: vl, category: daily, example: "Da was plezant"}
+  - {forms: ["tofwijs", "tof wijs"], standard: "aangenaam, leuk", region: ovl, area: ovl-gents, category: daily, src: [mwb-gents, gentdekuip], example: "'t Was tofwijs op de markt"}
   - {forms: ["ambetant"], standard: "vervelend", region: vl, category: daily, example: "Da's ambetant"}
   - {forms: ["zeveren", "zeveraar"], standard: "zeuren, onzin vertellen", region: vl, category: daily, example: "Hij zevert altijd"}
+  - {forms: ["kuisen", "kuisvrouw"], standard: "schoonmaken, poetsvrouw", region: vl, category: daily, example: "De kuisvrouw komt dinsdag"}
   - {forms: ["gazet"], standard: "krant", region: vl, category: daily, example: "Ik lees de gazet"}
+  - {forms: ["de facteur"], standard: "de postbode", region: vl, category: daily, example: "De facteur is nog nie geweest"}
   - {forms: ["het giet"], standard: "het regent hard", region: vl, category: daily, example: "'t Giet hier al de ganse dag"}
-  - {forms: ["patatten"], standard: "aardappelen", region: vl, category: daily, example: "Patatten met stoverij"}
-  - {forms: ["kieken"], standard: "kip", region: vl, category: daily, example: "Zondag eten we kieken"}
-  - {forms: ["beenhouwer"], standard: "slager", region: vl, category: daily, example: "Bij de beenhouwer geweest"}
-  - {forms: ["koekebakke", "koekebak"], standard: "pannenkoek", region: wvl, category: daily, example: "Mijn kleinkinderen eten geren koekebakken"}
-  - {forms: ["lochting"], standard: "groentetuin", region: wvl, category: daily, example: "'k zijn in de lochting bezig"}
-  - {forms: ["neuzekes", "Gentse neuzen"], standard: "cuberdons (snoep)", region: ovl, category: daily, example: "Ik heb neuzekes gekocht in Gent"}
+  - {forms: ["frutnier", "frutniere"], standard: "wesp", region: wvl, category: daily, src: [wvl-blog, vls-woorden], example: "Er zit e frutnier in de keuken"}
+  - {forms: ["dust"], standard: "dorst", region: wvl, category: daily, src: [wvl-blog], example: "'k èn zo'n dust"}
+  - {forms: ["kariot"], standard: "oud voertuig", region: wvl, category: daily, src: [wvl-blog], example: "Mijn kariot start nie meer"}
+  - {forms: ["tuimelet"], standard: "koprol", region: wvl, category: daily, src: [dialectloket-wvl], example: "De kleine deed een tuimelet"}
+  - {forms: ["renne", "jutekako"], standard: "schommel", region: wvl, category: daily, src: [dialectloket-wvl], example: "De kleinkinders zitten op de renne"}
+  - {forms: ["bijs"], standard: "schommel", region: ovl, category: daily, src: [dialectloket-ovl], example: "Ze speelt op de bijs"}
+  - {forms: ["schietlap"], standard: "katapult", region: wvl, category: daily, src: [dialectloket-wvl], example: "Vroeger hadden we een schietlap"}
+  - {forms: ["stekkerdraad"], standard: "prikkeldraad", region: wvl, category: daily, src: [dialectloket-wvl], example: "Mijn broek hing aan de stekkerdraad"}
+  - {forms: ["schoenlapper"], standard: "gekleurde vlinder", region: ovl, area: ovl-gents, category: daily, src: [dialectloket-ovl], example: "Er zat een schoenlapper op de bloemen"}
+  - {forms: ["pinker"], standard: "wimper", region: ovl, category: daily, src: [dialectloket-ovl], example: "Ik heb iets onder mijn pinker"}
+  - {forms: ["kodde"], standard: "haarvlecht", region: ovl, category: daily, src: [dialectloket-ovl], example: "Mijn kleindochter heeft een lange kodde"}
 
-  # --- family --------------------------------------------------------------------------
+  # ---------------------------------------------------------------- food and drink
+  - {forms: ["patatten"], standard: "aardappelen", region: vl, category: daily, example: "Patatten met stoverij"}
+  - {forms: ["stoverij", "stoofvlees"], standard: "stoofvlees", region: vl, category: daily, example: "Zondag maak ik stoverij"}
+  - {forms: ["kieken"], standard: "kip", region: vl, category: daily, example: "Zondag eten we kieken"}
+  - {forms: ["gekapt"], standard: "gehakt", region: wvl, category: daily, src: [vls-woorden], example: "Balletjes van gekapt"}
+  - {forms: ["hesp"], standard: "ham", region: vl, category: daily, example: "Een boterham met hesp"}
+  - {forms: ["confituur"], standard: "jam", region: vl, category: daily, example: "Confituur van de bomma"}
+  - {forms: ["pistolets"], standard: "broodjes", region: vl, category: daily, example: "Zondag haal ik pistolets"}
+  - {forms: ["koffiekoek"], standard: "zoet broodje bij de koffie", region: vl, category: daily, example: "Een koffiekoek bij de bakker"}
+  - {forms: ["beenhouwer"], standard: "slager", region: vl, category: daily, example: "Bij de beenhouwer geweest"}
+  - {forms: ["witloof"], standard: "witlof", region: vl, category: daily, example: "Witloof met hesp en kaas"}
+  - {forms: ["porei"], standard: "prei", region: vl, category: daily, example: "Soep met porei"}
+  - {forms: ["selder"], standard: "selderij", region: vl, category: daily, example: "Selder in de soep"}
+  - {forms: ["skokke"], standard: "peul", region: wvl, area: wvl-zuid, category: daily, src: [variaties], example: "Skokken uit de lochting"}
+  - {forms: ["keuns", "keun"], standard: "konijnen, konijn", region: wvl, category: daily, src: [vls-tabel], example: "Vroeger kweekten we keuns"}
+  - {forms: ["koekebakke", "koekebak", "pallulle"], standard: "pannenkoek", region: wvl, category: daily, src: [mwb-wvl], example: "Mijn kleinkinderen eten geren koekebakken"}
+  - {forms: ["lekkerkoek"], standard: "peperkoek", region: ovl, category: daily, src: [dialectloket-ovl], example: "Een snee lekkerkoek bij de koffie"}
+  - {forms: ["snoeperen"], standard: "snoepen", region: ovl, area: ovl-waas, category: daily, src: [variaties], example: "Ze zit weer te snoeperen"}
+  - {forms: ["drinkepulle"], standard: "drinkbus", region: wvl, category: daily, src: [mwb-wvl], example: "Mijn drinkepulle staat in de keuken"}
+  - {forms: ["neuzekes", "Gentse neuzen"], standard: "cuberdons (snoep)", region: ovl, area: ovl-gents, category: daily, example: "Ik heb neuzekes gekocht in Gent"}
+  - {forms: ["lochting"], standard: "groentetuin", region: wvl, category: daily, example: "'k zijn in de lochting bezig"}
+
+  # ---------------------------------------------------------------- home
+  - {forms: ["zetel"], standard: "fauteuil, bank", region: vl, category: home, example: "Ik zit in mijn zetel"}
+  - {forms: ["frigo"], standard: "koelkast", region: vl, category: home, example: "De frigo is leeg"}
+  - {forms: ["diepvries"], standard: "vriezer", region: vl, category: home, example: "Soep in de diepvries"}
+  - {forms: ["microgolf"], standard: "magnetron", region: vl, category: home, example: "Ik warm het op in de microgolf"}
+  - {forms: ["lavabo"], standard: "wastafel", region: vl, category: home, example: "Aan de lavabo uitgegleden"}
+  - {forms: ["living"], standard: "woonkamer", region: vl, category: home, example: "Ik lig in de living"}
+  - {forms: ["koer"], standard: "binnenplaats, achtertuin", region: vl, category: home, example: "Ik zit op de koer in de zon"}
+  - {forms: ["hof"], standard: "tuin", region: vl, category: home, example: "De hof moet nog gedaan worden"}
+  - {forms: ["dilt", "dil"], standard: "zolder, tussenverdieping", region: wvl, area: wvl-zuid, category: home, src: [wvl-blog, vls-woorden], example: "'t Ligt op den dilt"}
+  - {forms: ["keetle"], standard: "emmer", region: wvl, area: wvl-zuid, category: home, src: [wvl-blog, vls-woorden], example: "Geef mij de keetle"}
+  - {forms: ["kot"], standard: "kamer, hok, rommelkamer", region: vl, category: home, example: "'t Kot is vol"}
+  - {forms: ["stoof", "stove"], standard: "kachel", region: vl, category: home, example: "De stoof brandt"}
+  - {forms: ["chauffage"], standard: "verwarming", region: vl, category: home, example: "De chauffage is kapot"}
+  - {forms: ["prise"], standard: "stopcontact", region: vl, category: home, example: "De stekker zit nie in de prise"}
+  - {forms: ["tas", "tasse"], standard: "kopje", region: vl, category: home, example: "Nog een tas koffie?"}
+  - {forms: ["vuilbak"], standard: "vuilnisbak", region: vl, category: home, example: "De vuilbak moet buiten"}
+  - {forms: ["valies"], standard: "koffer", region: vl, category: home, example: "Mijn valies staat klaar"}
+  - {forms: ["sloefen", "sloffen"], standard: "pantoffels", region: vl, category: home, example: "Waar zijn mijn sloefen?"}
+  - {forms: ["kamerjas"], standard: "ochtendjas", region: vl, category: home, example: "Ik zit nog in mijn kamerjas"}
+  - {forms: ["klak", "klakke"], standard: "pet", region: vl, category: home, example: "Mijn klak ligt op de kast"}
+  - {forms: ["pull"], standard: "trui", region: vl, category: home, example: "Doe uw pull aan"}
+  - {forms: ["forsette", "fourchette"], standard: "vork", region: wvl, category: home, example: "Geef mij ne keer de forsette"}
+
+  # ---------------------------------------------------------------- family and people
   - {forms: ["bomma", "moemoe", "meme"], standard: "oma", region: vl, category: family, example: "Bomma is jarig"}
   - {forms: ["bompa", "pepe"], standard: "opa", region: vl, category: family, example: "Bompa was schrijnwerker"}
   - {forms: ["nonkel"], standard: "oom", region: vl, category: family, example: "Mijn nonkel woonde in Kortrijk"}
   - {forms: ["peter", "meter"], standard: "peetoom, peettante", region: vl, category: family, example: "Ik ben meter van Emma"}
   - {forms: ["petekind"], standard: "peetkind", region: vl, category: family, example: "Mijn petekind komt zondag"}
+  - {forms: ["ons moeder", "ons vader", "ons Jan"], standard: "(mijn/onze) moeder, vader, Jan", region: vl, category: family, example: "Ons moeder werd 95"}
+  - {forms: ["mijne vent", "mijn vent"], standard: "mijn man", region: vl, category: family, example: "Mijne vent is al tien jaar dood"}
+  - {forms: ["kleinkinders"], standard: "kleinkinderen", region: vl, category: family, example: "Mijn kleinkinders komen zondag"}
+  - {forms: ["gebuur", "gebuurvrouw", "gebuurs"], standard: "buurman, buurvrouw, buren", region: vl, category: family, example: "De gebuurvrouw komt soms langs"}
   - {forms: ["moat", "maat"], standard: "vriend, makker", region: wvl, category: family, example: "Mijn moat van de duivenbond"}
-  - {forms: ["pagadder"], standard: "kwajongen, klein kind", region: ovl, category: family, example: "Da was nen echten pagadder"}
+  - {forms: ["pagadder"], standard: "kwajongen, klein kind", region: ovl, area: ovl-gents, category: family, example: "Da was nen echten pagadder"}
+  - {forms: ["tseel", "op tseel"], standard: "samenwonend, getrouwd", region: ovl, area: ovl-gents, category: family, src: [mwb-gents], example: "Ze woonden op tseel"}
 
-  # --- home ------------------------------------------------------------------------------
-  - {forms: ["zetel"], standard: "fauteuil, bank", region: vl, category: home, example: "Ik zit in mijn zetel"}
-  - {forms: ["frigo"], standard: "koelkast", region: vl, category: home, example: "De frigo is leeg"}
-  - {forms: ["lavabo"], standard: "wastafel", region: vl, category: home, example: "Aan de lavabo uitgegleden"}
-  - {forms: ["living"], standard: "woonkamer", region: vl, category: home, example: "Ik lig in de living"}
-  - {forms: ["kot"], standard: "kamer, hok, rommelkamer", region: vl, category: home, example: "'t Kot is vol"}
-  - {forms: ["stoof", "stove"], standard: "kachel", region: vl, category: home, example: "De stoof brandt"}
-  - {forms: ["tas", "tasse"], standard: "kopje", region: vl, category: home, example: "Nog een tas koffie?"}
-  - {forms: ["vuilbak"], standard: "vuilnisbak", region: vl, category: home, example: "De vuilbak moet buiten"}
-  - {forms: ["valies"], standard: "koffer", region: vl, category: home, example: "Mijn valies staat klaar"}
-  - {forms: ["forsette", "fourchette"], standard: "vork", region: wvl, category: home, example: "Geef mij ne keer de forsette"}
+  # ---------------------------------------------------------------- social, greetings
+  - {forms: ["merci", "merci veelmaals"], standard: "dank u", region: vl, category: social, example: "Merci da ge belt"}
+  - {forms: ["salut", "daag"], standard: "dag (groet)", region: vl, category: social, example: "Salut, tot morgen"}
+  - {forms: ["ça va", "sava"], standard: "gaat het?, het gaat", region: vl, category: social, example: "Ça va, en met u?"}
+  - {forms: ["bwa"], standard: "tja, gaat wel", region: vl, category: social, example: "Bwa, 't gaat"}
+  - {forms: ["ocharme"], standard: "och arme, wat zielig", region: vl, category: social, example: "Ocharme, die vrouw"}
+  - {forms: ["voilà"], standard: "zo, dat is het", region: vl, category: social, example: "Voilà, de soep is klaar"}
+  - {forms: ["madam", "madammeke"], standard: "mevrouw", region: vl, category: social, example: "De madam van de apotheek"}
+  - {forms: ["ik amuseer mij"], standard: "ik vermaak me", region: vl, category: social, example: "Ik amuseer mij met de kleinkinders"}
 
-  # --- feelings and wellbeing (FR-36, FR-37) ----------------------------------------------
+  # ---------------------------------------------------------------- feelings and wellbeing (FR-36, FR-37)
   - {forms: ["content"], standard: "blij, tevreden", region: vl, category: feeling, example: "Ik ben content dat ge belt"}
-  - {forms: ["verschieten", "verschoten"], standard: "schrikken", region: vl, category: feeling, safety: FR-37, example: "'k zijn verschoten van een geluid"}
-  - {forms: ["schrik hebben", "'k heb schrik"], standard: "bang zijn", region: vl, category: feeling, safety: FR-37, example: "'k heb schrik 's nachts"}
-  - {forms: ["vies zijn op", "vies"], standard: "boos zijn op", region: vl, category: false_friend, example: "Ze is vies op mij"}
+  - {forms: ["verschieten", "verschoten", "verschiete"], standard: "schrikken", region: vl, category: feeling, safety: FR-37, example: "'k zijn verschoten van een geluid"}
+  - {forms: ["schrik hebben", "'k heb schrik", "'k èn schrik"], standard: "bang zijn", region: vl, category: feeling, safety: FR-37, example: "'k heb schrik 's nachts"}
   - {forms: ["triestig", "droef"], standard: "verdrietig", region: vl, category: feeling, safety: FR-36, example: "'k zijn zo triestig de laatste tijd"}
   - {forms: ["alleen zitten"], standard: "eenzaam zijn", region: vl, category: feeling, safety: FR-36, example: "Ik zit hier altijd alleen"}
-  - {forms: ["'t moet voor mij niet meer", "'t hoeft voor mij nie meer"], standard: "ik wil niet meer leven", region: vl, category: feeling, safety: FR-32, example: "'t Moet voor mij nie meer"}
+  - {forms: ["ik verveel mij"], standard: "ik verveel me", region: vl, category: feeling, safety: FR-36, classifier_only: true, example: "Ik verveel mij de ganse dag"}
+  - {forms: ["ik ben het beu"], standard: "ik heb er genoeg van", region: vl, category: feeling, classifier_only: true, safety: FR-32, example: "Ik ben het beu, alles"}
+  - {forms: ["ik heb het lastig"], standard: "het is moeilijk voor mij", region: vl, category: feeling, safety: FR-36, classifier_only: true, example: "Ik heb het lastig sinds hij weg is"}
+  - {forms: ["piekeren", "kopzorgen"], standard: "tobben, zorgen maken", region: vl, category: feeling, safety: FR-37, classifier_only: true, example: "'k lig de ganse nacht te piekeren"}
+  - {forms: ["'t moet voor mij niet meer", "'t hoeft voor mij nie meer"], standard: "ik wil niet meer leven", region: vl, category: feeling, safety: FR-32, src: [zelfmoord1813], example: "'t Moet voor mij nie meer"}
   - {forms: ["'t is gedaan met mij"], standard: "ik ben op, ik kan niet meer (kan wanhoop zijn)", region: vl, category: feeling, safety: FR-32, example: "'t Is gedaan met mij"}
-  - {forms: ["ze mogen mij komen halen"], standard: "ik wil liever dood", region: vl, category: feeling, safety: FR-32, example: "Ze mogen mij komen halen"}
+  - {forms: ["ze mogen mij komen halen", "ze mogen me komen halen"], standard: "ik wil liever dood (levensmoeheid)", region: vl, category: feeling, safety: FR-32, src: [weliswaar, zelfmoord1813], example: "Ze mogen mij komen halen"}
   - {forms: ["ik zie het niet meer zitten"], standard: "ik heb geen hoop meer", region: vl, category: feeling, safety: FR-32, example: "Ik zie het echt nie meer zitten"}
+  - {forms: ["liever nooit meer wakker worden"], standard: "doodswens", region: vl, category: feeling, safety: FR-32, src: [zelfmoord1813], example: "Ik zou liever nooit meer wakker worden"}
+  - {forms: ["ik ben jullie tot last", "ik ben iedereen tot last"], standard: "ik voel me een last (risicosignaal)", region: vl, category: feeling, safety: FR-32, src: [zelfmoord1813], example: "Ik ben jullie toch maar tot last"}
+  - {forms: ["beter als het gedaan is"], standard: "het zou beter zijn als ik dood was", region: vl, category: feeling, safety: FR-32, src: [zelfmoord1813], example: "Ik kan er nie meer tegen, 't zou beter zijn als 't gedaan is"}
+  - {forms: ["ik kan het niet meer aan"], standard: "ik kan het niet meer aan (mogelijk risicosignaal)", region: vl, category: feeling, safety: FR-32, classifier_only: true, src: [zelfmoord1813], example: "Ik kan het allemaal nie meer aan"}
+  - {forms: ["vies zijn op", "vies"], standard: "boos zijn op", region: vl, category: false_friend, example: "Ze is vies op mij"}
 
-  # --- health and falls (FR-30, FR-31) -------------------------------------------------------
-  - {forms: ["zeer", "zeer doen", "'k heb zeer"], standard: "pijn, pijn doen", region: vl, category: health, example: "Mijn knie doet zeer"}
-  - {forms: ["uitschuiven", "uitgeschoven", "uitgeschoten"], standard: "uitglijden", region: vl, category: health, safety: FR-30, example: "'k zijn uitgeschoven in de badkamer"}
+  # ---------------------------------------------------------------- health, body, falls (FR-30, FR-31)
+  - {forms: ["zeer", "zjeer", "zeer doen", "'k heb zeer"], standard: "pijn, pijn doen", region: vl, category: health, src: [mwb-wvl], example: "Me rik doe zjeere"}
+  - {forms: ["rik", "rug"], standard: "rug", region: wvl, category: health, src: [mwb-wvl], example: "Me rik doe zeer"}
+  - {forms: ["kopzeer", "buikzeer"], standard: "hoofdpijn, buikpijn", region: vl, category: health, example: "'k èn kopzeer"}
+  - {forms: ["kaieten"], standard: "schreeuwen van de pijn", region: wvl, category: health, src: [mwb-wvl], example: "'k Lag te kaieten van de pijn"}
+  - {forms: ["goe", "goed"], standard: "gezond, in orde", region: wvl, category: health, src: [vls-woorden], example: "'k zijn nie goe vandaag"}
+  - {forms: ["nie goe zijn", "nie goe zyn"], standard: "onwel zijn", region: wvl, category: health, safety: FR-31, classifier_only: true, src: [vls-woorden], example: "'k zijn nie goe, 'k zitten in mijn zetel"}
+  - {forms: ["valling", "vollinge"], standard: "verkoudheid, zware hoest", region: vl, category: health, src: [mwb-wvl], example: "'k èn e valling"}
+  - {forms: ["stokkestif"], standard: "stram, stijf", region: wvl, category: health, src: [mwb-wvl], example: "'s Morgens zijn 'k stokkestif"}
+  - {forms: ["bollewaarde", "bolloarde"], standard: "duizelig, versuft", region: wvl, category: health, safety: FR-31, classifier_only: true, src: [mwb-wvl, vls-woorden], example: "'k zijn zo bollewaarde vandaag"}
+  - {forms: ["'k draaie gelik nen top"], standard: "ik ben erg duizelig", region: wvl, category: health, safety: FR-31, classifier_only: true, src: [mwb-wvl], example: "'k draaie gelik nen top"}
+  - {forms: ["iele van oofde"], standard: "leeg, draaierig gevoel in het hoofd", region: wvl, category: health, safety: FR-31, classifier_only: true, src: [mwb-wvl], example: "'k zijn iele van oofde"}
+  - {forms: ["gabbe"], standard: "grote open wonde", region: wvl, category: health, safety: FR-30, src: [vls-woorden], example: "'k èn e gabbe in mijn been"}
+  - {forms: ["betroapn"], standard: "besmetten", region: wvl, category: health, src: [vls-woorden], example: "'k zijn betroapt door de kleine"}
+  - {forms: ["uitschuiven", "uitgeschoven", "uutgeschoven", "uitgeschoten"], standard: "uitglijden", region: vl, category: health, safety: FR-30, example: "'k zijn uitgeschoven in de badkamer"}
+  - {forms: ["gevalln", "gevaln", "gevolen", "vol'n"], standard: "gevallen", region: wvl, category: health, safety: FR-30, src: [mwb-wvl], example: "'k zijn gevalln in de gang"}
   - {forms: ["op mijn gat gevallen"], standard: "op mijn achterwerk gevallen", region: vl, category: health, safety: FR-30, example: "'k zijn ip mijn gat gevallen"}
   - {forms: ["'k geraak nie recht", "'k geraak niet op"], standard: "ik kan niet opstaan", region: vl, category: health, safety: FR-30, example: "'k Lig hier en 'k geraak nie recht"}
+  - {forms: ["ik kan niet meer opstaan", "'k kan nie meer rechtstaan"], standard: "ik kan niet opstaan", region: vl, category: health, safety: FR-30, example: "Ik kan nie meer opstaan"}
+  - {forms: ["op de vloer liggen"], standard: "op de grond liggen", region: vl, category: health, safety: FR-30, example: "'k lig al een uur op de vloer"}
+  - {forms: ["van zijn suus gevallen", "van mijn suus gevalln"], standard: "flauwgevallen", region: wvl, category: health, safety: FR-30, src: [vls-uitdrukkingen], example: "'k zijn van mijn suus gevalln"}
   - {forms: ["slecht worden", "'k wier slecht"], standard: "onwel worden", region: vl, category: health, safety: FR-31, example: "'k Wier slecht in de keuken"}
   - {forms: ["flauw vallen", "flauwgevallen", "van mijn stokje gegaan"], standard: "flauwvallen", region: vl, category: health, safety: FR-30, example: "'k zijn flauwgevallen"}
+  - {forms: ["flauw"], standard: "slap, zwak, onwel", region: vl, category: health, safety: FR-31, classifier_only: true, example: "'k zijn zo flauw vandaag"}
   - {forms: ["mottig"], standard: "misselijk, onwel; ook: lelijk weer", region: vl, category: health, example: "'k zijn een beetje mottig"}
   - {forms: ["draaierig", "zwart voor mijn ogen"], standard: "duizelig", region: vl, category: health, safety: FR-31, example: "'t Wordt mij zwart voor mijn ogen"}
   - {forms: ["benauwd"], standard: "kortademig; ook: drukkend warm weer", region: vl, category: health, safety: FR-31, example: "'k Ben zo benauwd"}
-  - {forms: ["kotsen", "overgeven"], standard: "braken", region: vl, category: health, example: "'k Heb de ganse nacht gekotst"}
+  - {forms: ["geen lucht krijgen", "'k krijg geen lucht"], standard: "niet kunnen ademen", region: vl, category: health, safety: FR-31, example: "'k krijg geen lucht meer"}
+  - {forms: ["zeer op mijn borst", "druk op mijn borst"], standard: "pijn op de borst", region: vl, category: health, safety: FR-31, example: "'k èn zo'n zeer op mijn borst"}
+  - {forms: ["arm niet meer bewegen"], standard: "verlamming van de arm (beroerte?)", region: vl, category: health, safety: FR-31, example: "Ik kan mijn arm nie meer bewegen"}
   - {forms: ["een attaque gehad", "nen attak", "een slag gehad"], standard: "een beroerte of hartaanval gehad", region: vl, category: health, safety: FR-31, classifier_only: true, example: "Mijn man heeft vroeger een attaque gehad"}
-  - {forms: ["dokteur", "dokter"], standard: "huisarts", region: vl, category: health, example: "De dokteur komt maandag"}
+  - {forms: ["kotsen", "overgeven"], standard: "braken", region: vl, category: health, example: "'k Heb de ganse nacht gekotst"}
+  - {forms: ["suiker hebben"], standard: "diabetes hebben", region: vl, category: health, example: "Ik heb suiker, ik moet oppassen"}
+  - {forms: ["dokteur", "huisdokter"], standard: "huisarts", region: vl, category: health, example: "De dokteur komt maandag"}
+  - {forms: ["kiné"], standard: "kinesitherapeut, fysiotherapeut", region: vl, category: health, example: "De kiné komt voor mijn knie"}
+  - {forms: ["pilleke", "pillekes"], standard: "pil, pillen", region: vl, category: health, example: "Mijn pillekes liggen klaar"}
+  - {forms: ["kliniek", "gasthuis", "spoed"], standard: "ziekenhuis, spoedgevallendienst", region: vl, category: health, example: "Ze hebben mij naar de spoed gebracht"}
+  - {forms: ["rusthuis", "home"], standard: "woonzorgcentrum", region: vl, category: health, example: "Mijn zus zit in 't rusthuis"}
+  - {forms: ["ziekenkas", "mutualiteit"], standard: "ziekenfonds", region: vl, category: health, example: "Ik moet naar de mutualiteit"}
 
-  # --- money and scams (FR-33) ----------------------------------------------------------------
+  # ---------------------------------------------------------------- money and scams (FR-33)
   - {forms: ["bankkaart", "bancontact"], standard: "betaalkaart", region: vl, category: money, safety: FR-33, example: "Ze vroegen mijn bankkaart"}
   - {forms: ["kaartlezer", "digipass"], standard: "kaartlezer van de bank", region: vl, category: money, safety: FR-33, example: "De code van mijn kaartlezer"}
   - {forms: ["itsme"], standard: "itsme (digitale identiteit)", region: vl, category: money, safety: FR-33, example: "Ze vroegen mij itsme te bevestigen"}
   - {forms: ["gsm", "nen nieuwen gsm"], standard: "mobiele telefoon, nieuwe telefoon", region: vl, category: money, example: "Mijn kleinzoon heeft nen nieuwen gsm"}
+  - {forms: ["frank", "frankskes"], standard: "Belgische frank (oude munt; ouderen rekenen soms nog zo)", region: vl, category: money, example: "Da kost wel duizend frank"}
+  - {forms: ["overschrijving"], standard: "bankoverschrijving", region: vl, category: money, example: "Ik moet een overschrijving doen"}
+  - {forms: ["factuur"], standard: "rekening (om te betalen)", region: vl, category: money, example: "De factuur van de elektriek"}
 
-  # --- false friends: words that mean something else than in Netherlands Dutch --------------
+  # ---------------------------------------------------------------- false friends (other meaning than in the Netherlands)
   - {forms: ["schoon"], standard: "mooi (niet: schoon/proper)", region: vl, category: false_friend, example: "'t Is schoon weer"}
   - {forms: ["proper"], standard: "schoon, net", region: vl, category: false_friend, example: "Het huis is proper"}
   - {forms: ["graag zien"], standard: "houden van", region: vl, category: false_friend, example: "Ik zie mijn kleinkinderen zo graag"}
   - {forms: ["zot"], standard: "gek", region: vl, category: false_friend, example: "Da's toch zot"}
   - {forms: ["deftig"], standard: "fatsoenlijk, behoorlijk", region: vl, category: false_friend, example: "Een deftige maaltijd"}
-  - {forms: ["kleed"], standard: "jurk", region: vl, category: false_friend, example: "Mijn schoon kleed"}
+  - {forms: ["kleed"], standard: "jurk", region: vl, category: false_friend, src: [taaladvies], example: "Mijn schoon kleed"}
   - {forms: ["slecht zijn"], standard: "ziek of onwel zijn", region: vl, category: false_friend, safety: FR-31, classifier_only: true, example: "'k Ben vandaag zo slecht"}
   - {forms: ["in slaap gevallen"], standard: "ingeslapen (geen val)", region: vl, category: false_friend, example: "'k zijn in slaap gevallen voor de tv"}
+  - {forms: ["op zijn"], standard: "uitgeput zijn", region: vl, category: false_friend, example: "'k zijn op na de boodschappen"}
+  - {forms: ["vies weer", "mottig weer"], standard: "slecht weer", region: vl, category: false_friend, example: "'t Is mottig weer vandaag"}
+  - {forms: ["benauwd weer"], standard: "drukkend warm weer (geen ademnood)", region: vl, category: false_friend, example: "'t Is benauwd weer, 't gaat onweren"}

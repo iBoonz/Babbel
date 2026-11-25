@@ -251,6 +251,30 @@ checks it. That is how the tests grow into the pilot's safety net.
 
 Re-run steps 5 and 7 whenever a prompt, model or provider changes.
 
+## Checking the dialect word list
+
+The West- and East-Flemish word list (`src/babbel/locales/dialects/vlaams.yaml`) is a draft until
+native speakers have checked it. Per region:
+
+```bash
+python -m babbel.evals.lexicon_review export --region wvl --out review-wvl.csv
+```
+
+Give the sheet to someone from that region (ideally per area: Westhoek, Kortrijk, Brugge, Kust;
+Gent, Meetjesland, Waasland, Aalst, Vlaamse Ardennen). They mark each line ok, wrong or unsure and
+correct what is wrong. Then:
+
+```bash
+python -m babbel.evals.lexicon_review import review-wvl.csv --reviewer AB --reviewer-area wvl-westhoek
+```
+
+```bash
+python -m babbel.evals.lexicon_review status
+```
+
+Corrections are applied by hand in `vlaams.yaml`. New safety phrases a reviewer adds go into
+`evals/safety_cases.yaml` first, then `make evals`.
+
 ## After this
 
 - Voice (D6): a listening test of 2–3 nl-BE voices with a few older listeners.

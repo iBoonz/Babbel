@@ -40,3 +40,23 @@ cases:
       - "Roger was veertig jaar schrijnwerker in Eeklo"
     must_not_store: []
     private: []
+
+  - id: gerard-dialect
+    transcript: |
+      Babbel: Dag Gerard, met Babbel, uw computervriend. Past het nu?
+      Gerard: Joak, 'k zitten ier in mien zetel.
+      Babbel: Hoe was uw week?
+      Gerard: 'k èn de lochting edoan, de patatten zitten d'r uut. Mien kleindochter Lien is getrouwd zoaterdag in Ieper.
+      Babbel: Proficiat! Was het een mooi feest?
+      Gerard: 't Was schoon, moar 'k was rap moe. Me rik doet zeere.
+      Babbel: Dat begrijp ik. Is er nog iets dat u bezighoudt?
+      Gerard: Mien gebuur Noël drinkt te vele, moar da moe je an niemand zeggen.
+      Babbel: Dat blijft onder ons.
+      Gerard: En de bank belde, 'k èn ze mien code gegeven, 5590.
+    must_remember:
+      - "Kleindochter Lien is zaterdag getrouwd in Ieper"
+      - "Gerard heeft een moestuin (lochting) en heeft de aardappelen geoogst"
+      - "Gerard heeft rugpijn (zoals hij het zei)"
+    must_not_store: ["5590"]
+    private: ["Noël", "drinkt"]
+

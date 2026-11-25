@@ -40,8 +40,11 @@ def test_every_dialect_safety_phrase_triggers_the_keyword_rules():
 
 def test_glossary_puts_health_first_and_filters_region():
     wvl = dialect.glossary("wvl")
-    lines = wvl.splitlines()
-    assert any("uitglijden" in line for line in lines[:8])
+    body = [line for line in wvl.splitlines() if line.startswith("- ")]
+    safety_lines = {f"- {' / '.join(e['forms'])} = {e['standard']}"
+                    for e in dialect.entries("wvl") if e.get("safety")}
+    n = len(safety_lines)
+    assert set(body[:n]) == safety_lines  # every safety word comes before any other word
     assert "lochting" in wvl and "neuzekes" not in wvl  # West only, no Ghent sweets
     assert "neuzekes" in dialect.glossary("ovl")
     assert len(dialect.glossary("wvl", limit=5).splitlines()) <= 5 + 3  # header + 5 entries
@@ -61,3 +64,47 @@ def test_dialect_cases_are_valid():
         assert c["region"] in {"wvl", "ovl"} and c["text"] and c["meaning"], c["id"]
     gated = {c.get("expect", {}).get("args", {}).get("rule_id") for c in cases}
     assert {"FR-30", "FR-31", "FR-32"} <= gated
+
+
+def test_spelling_normaliser_maps_dialect_to_standard():
+    """FR-19: heavy dialect spelling must reach the same safety rules as standard Dutch."""
+    out = dialect.normalise_spelling("'t moet veur mie nie mier, ze meugen mie komen oaln")
+    assert out == "'t moet voor mij niet meer, ze mogen mij komen halen"
+    assert dialect.normalise_spelling("'k zijn evalln") == "'k zijn gevallen"
+    assert dialect.normalise_spelling("de tomaten zijn rijp") == "de tomaten zijn rijp"
+
+
+def test_normaliser_only_adds_safety_matches():
+    """Checking the normalised text next to the raw text can never lose a flag."""
+    kw = KeywordDetector("nl-BE")
+    for text in ["Ik ben gevallen", "ze mogen me komen halen", "pijn op mijn borst"]:
+        assert kw.detect(text)
+
+
+def test_lexicon_review_round_trip(tmp_path):
+    from babbel.evals import lexicon_review as lr
+
+    sheet = tmp_path / "review.csv"
+    n = lr.export("wvl", sheet)
+    assert n == len(dialect.entries("wvl"))
+    rows = sheet.read_text(encoding="utf-8-sig").splitlines()
+    header, first, second = rows[0], rows[1], rows[2]
+    filled = [header, first.replace(",no,,,,", ",no,ok,,,").replace(",yes,,,,", ",yes,ok,,,"),
+              second.replace(",no,,,,", ",no,wrong,,,").replace(",yes,,,,", ",yes,wrong,,,")]
+    sheet.write_text("\n".join(filled) + "\n", encoding="utf-8")
+    store = tmp_path / "reviews.csv"
+    added, problems = lr.import_sheet(sheet, "AB", "wvl-westhoek", path=store)
+    assert added == 0 and any("needs a correct_meaning" in p for p in problems)  # wrong without fix
+    filled[2] = filled[2].rstrip(",") + "fout,,"
+    sheet.write_text("\n".join(filled[:2]) + "\n", encoding="utf-8")
+    added, problems = lr.import_sheet(sheet, "AB", "wvl-westhoek", path=store)
+    assert added == 1 and not problems
+    counts = lr.status(lr.load_reviews(store))
+    assert sum(c["confirmed"] for c in counts.values()) == 1
+
+
+def test_reviews_file_refers_to_existing_entries():
+    from babbel.evals import lexicon_review as lr
+
+    keys = {e["forms"][0] for e in dialect.entries()}
+    assert all(r["key"] in keys for r in lr.load_reviews())
