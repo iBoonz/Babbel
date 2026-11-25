@@ -1,5 +1,7 @@
 # Choosing Babbel's models: step by step
 
+First time, on Windows, speech only? Start with [`speech-quickstart-windows.md`](speech-quickstart-windows.md).
+
 Goal: pick the speech-to-text service and the language model for the pilot **on evidence from
 Babbel's own tests**, not leaderboards. Spec: D4 (language model), D5 (speech to text),
 NFR-01 (latency), NFR-02 (cost), NFR-04 (EU), NFR-11 (dialect recognition), FR-30 to FR-37 (safety).

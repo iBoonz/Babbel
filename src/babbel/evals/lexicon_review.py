@@ -25,6 +25,7 @@ from pathlib import Path
 
 from babbel.core.dialect import entries
 from babbel.core.locale import LOCALES_DIR
+from babbel.evals.asr_tools import read_csv_rows, write_csv_rows
 
 REVIEWS = LOCALES_DIR / "dialects" / "vlaams_reviews.csv"
 EXPORT_FIELDS = ["key", "forms", "standard", "region", "area", "category", "safety", "example",
@@ -40,14 +41,11 @@ def entry_key(e: dict) -> str:
 
 def export(region: str | None, out: Path) -> int:
     rows = entries(region)
-    with out.open("w", encoding="utf-8-sig", newline="") as fh:  # BOM so Excel reads UTF-8
-        w = csv.DictWriter(fh, fieldnames=EXPORT_FIELDS)
-        w.writeheader()
-        for e in rows:
-            w.writerow({"key": entry_key(e), "forms": " / ".join(e["forms"]), "standard": e["standard"],
-                        "region": e["region"], "area": e.get("area", ""), "category": e["category"],
-                        "safety": e.get("safety", ""), "example": e["example"],
-                        "sourced": "yes" if e.get("src") else "no"})
+    write_csv_rows(out, EXPORT_FIELDS, [
+        {"key": entry_key(e), "forms": " / ".join(e["forms"]), "standard": e["standard"],
+         "region": e["region"], "area": e.get("area", ""), "category": e["category"],
+         "safety": e.get("safety", ""), "example": e["example"],
+         "sourced": "yes" if e.get("src") else "no"} for e in rows])
     return len(rows)
 
 
@@ -61,25 +59,25 @@ def load_reviews(path: Path = REVIEWS) -> list[dict]:
 def import_sheet(sheet: Path, reviewer: str, reviewer_area: str, path: Path = REVIEWS) -> tuple[int, list[str]]:
     known = {entry_key(e) for e in entries()}
     added, problems = [], []
-    with sheet.open(encoding="utf-8-sig") as fh:
-        for i, row in enumerate(csv.DictReader(fh), start=2):
-            verdict = (row.get("verdict") or "").strip().lower()
-            if not verdict:
-                continue
-            if verdict not in VERDICTS:
-                problems.append(f"line {i}: verdict {verdict!r} (use ok, wrong or unsure)")
-                continue
-            if row.get("key") not in known:
-                problems.append(f"line {i}: unknown entry {row.get('key')!r}")
-                continue
-            if verdict == "wrong" and not (row.get("correct_meaning") or row.get("correct_region")
-                                           or row.get("comment")):
-                problems.append(f"line {i}: 'wrong' needs a correct_meaning, correct_region or comment")
-                continue
-            added.append({"date": date.today().isoformat(), "reviewer": reviewer,
-                          "reviewer_area": reviewer_area, "key": row["key"], "verdict": verdict,
-                          **{k: (row.get(k) or "").strip() for k in
-                             ("correct_meaning", "correct_region", "comment")}})
+    # Excel may save with semicolons and a BOM: read_csv_rows handles both
+    for i, row in enumerate(read_csv_rows(sheet), start=2):
+        verdict = (row.get("verdict") or "").strip().lower()
+        if not verdict:
+            continue
+        if verdict not in VERDICTS:
+            problems.append(f"line {i}: verdict {verdict!r} (use ok, wrong or unsure)")
+            continue
+        if row.get("key") not in known:
+            problems.append(f"line {i}: unknown entry {row.get('key')!r}")
+            continue
+        if verdict == "wrong" and not (row.get("correct_meaning") or row.get("correct_region")
+                                       or row.get("comment")):
+            problems.append(f"line {i}: 'wrong' needs a correct_meaning, correct_region or comment")
+            continue
+        added.append({"date": date.today().isoformat(), "reviewer": reviewer,
+                      "reviewer_area": reviewer_area, "key": row["key"], "verdict": verdict,
+                      **{k: (row.get(k) or "").strip() for k in
+                         ("correct_meaning", "correct_region", "comment")}})
     if added and not problems:
         new = not path.exists()
         with path.open("a", encoding="utf-8", newline="") as fh:

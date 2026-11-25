@@ -89,13 +89,13 @@ def test_lexicon_review_round_trip(tmp_path):
     assert n == len(dialect.entries("wvl"))
     rows = sheet.read_text(encoding="utf-8-sig").splitlines()
     header, first, second = rows[0], rows[1], rows[2]
-    filled = [header, first.replace(",no,,,,", ",no,ok,,,").replace(",yes,,,,", ",yes,ok,,,"),
-              second.replace(",no,,,,", ",no,wrong,,,").replace(",yes,,,,", ",yes,wrong,,,")]
+    filled = [header, first.replace(";no;;;;", ";no;ok;;;").replace(";yes;;;;", ";yes;ok;;;"),
+              second.replace(";no;;;;", ";no;wrong;;;").replace(";yes;;;;", ";yes;wrong;;;")]
     sheet.write_text("\n".join(filled) + "\n", encoding="utf-8")
     store = tmp_path / "reviews.csv"
     added, problems = lr.import_sheet(sheet, "AB", "wvl-westhoek", path=store)
     assert added == 0 and any("needs a correct_meaning" in p for p in problems)  # wrong without fix
-    filled[2] = filled[2].rstrip(",") + "fout,,"
+    filled[2] = filled[2].rstrip(";") + "fout;;"
     sheet.write_text("\n".join(filled[:2]) + "\n", encoding="utf-8")
     added, problems = lr.import_sheet(sheet, "AB", "wvl-westhoek", path=store)
     assert added == 1 and not problems

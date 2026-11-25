@@ -5,7 +5,9 @@ Pure functions, used by asr/prepare_audio.py and asr/benchmark.py and covered by
 
 from __future__ import annotations
 
+import csv
 import re
+from pathlib import Path
 
 from babbel.core.safety import KeywordDetector
 
@@ -46,3 +48,22 @@ def safety_misses(reference: str, hypothesis: str, detector: KeywordDetector) ->
     expected = {f.rule_id for f in detector.detect(reference)}
     found = {f.rule_id for f in detector.detect(hypothesis)}
     return expected, expected - found
+
+
+def read_csv_rows(path: str | Path) -> list[dict]:
+    """Read a CSV saved by Excel, LibreOffice or a script: UTF-8 with or without BOM, comma- or
+    semicolon-separated (Excel on a Belgian or Dutch Windows saves with semicolons)."""
+    text = Path(path).read_text(encoding="utf-8-sig")
+    first = text.splitlines()[0] if text else ""
+    delimiter = ";" if first.count(";") > first.count(",") else ","
+    return [{(k or "").strip(): (v or "") for k, v in row.items()}
+            for row in csv.DictReader(text.splitlines(), delimiter=delimiter)]
+
+
+def write_csv_rows(path: str | Path, fields: list[str], rows: list[dict]) -> None:
+    """Write a CSV that Excel opens correctly on a Belgian or Dutch Windows (semicolons, UTF-8
+    with BOM). read_csv_rows reads it back, as do LibreOffice and Google Sheets."""
+    with Path(path).open("w", encoding="utf-8-sig", newline="") as fh:
+        w = csv.DictWriter(fh, fieldnames=fields, delimiter=";", extrasaction="ignore")
+        w.writeheader()
+        w.writerows({k: r.get(k, "") for k in fields} for r in rows)

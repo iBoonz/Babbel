@@ -35,7 +35,6 @@ Pilot gate (spec NFR-11): WER <= 25% per dialect group on phone audio, and no sa
 from __future__ import annotations
 
 import argparse
-import csv
 import json
 import os
 import re
@@ -54,7 +53,7 @@ except ImportError:  # pragma: no cover
 from babbel.config import load_env_file
 from babbel.core.dialect import stt_hints
 from babbel.core.safety import KeywordDetector
-from babbel.evals.asr_tools import safety_misses
+from babbel.evals.asr_tools import read_csv_rows, safety_misses, write_csv_rows
 
 PROMPT = "Vlaams gesprek met een oudere persoon. Namen: {names}."
 HINTS = " Woorden: {hints}."  # FR-19: dialect forms from locales/dialects/vlaams.yaml
@@ -169,6 +168,26 @@ def make_transcriber(provider: str, model: str = "", *, base_url: str = "", regi
     sys.exit(f"unknown provider {provider!r}; choose from {', '.join(DEFAULT_MODELS)}")
 
 
+def fill_drafts(manifest: Path, transcribe) -> None:
+    """Pre-fill the `draft` column (wide-band audio), so writing references is correcting, not
+    typing. Rows that already have a draft or a reference are left alone."""
+    rows = read_csv_rows(manifest)
+    fields = list(rows[0].keys()) if rows else []
+    if "draft" not in fields:
+        fields.append("draft")
+    done = 0
+    for row in rows:
+        if row.get("draft", "").strip() or row.get("reference", "").strip():
+            continue
+        try:
+            row["draft"] = transcribe(manifest.parent / row["audio"])
+            done += 1
+        except Exception as exc:
+            print(f"  failed {row['audio']}: {exc}")
+        write_csv_rows(manifest, fields, rows)  # save after every clip: safe to stop and resume
+    print(f"{done} drafts added to {manifest}. Copy each draft to `reference` and correct it by ear.")
+
+
 def main() -> None:
     load_env_file()
     ap = argparse.ArgumentParser()
@@ -180,6 +199,8 @@ def main() -> None:
     ap.add_argument("--phone", action="store_true", help="use the phone-line copies (audio_phone)")
     ap.add_argument("--names", default="", help="comma-separated names to bias recognition")
     ap.add_argument("--locale", default="nl-BE", help="locale pack for the safety rules")
+    ap.add_argument("--fill-drafts", action="store_true",
+                    help="only fill the empty `draft` column of the manifest with this provider, then stop")
     ap.add_argument("--dialect-hints", default="", metavar="REGION",
                     help="wvl or ovl: pass dialect words from the lexicon as hints (openai provider only)")
     args = ap.parse_args()
@@ -187,6 +208,10 @@ def main() -> None:
     manifest = Path(args.manifest)
     model = args.model or DEFAULT_MODELS.get(args.provider, "")
     hints = stt_hints(args.dialect_hints) if args.dialect_hints else None
+    if args.fill_drafts:
+        fill_drafts(manifest, make_transcriber(args.provider, model, base_url=args.base_url,
+                                               region=args.region, names=args.names, hints=hints))
+        return
     if hints and args.provider != "openai":
         print("note: --dialect-hints is only passed to the openai provider for now")
     transcribe = make_transcriber(args.provider, model, base_url=args.base_url,
@@ -200,8 +225,8 @@ def main() -> None:
     out = Path("asr/results") / f"{label}.jsonl"
     out.parent.mkdir(parents=True, exist_ok=True)
 
-    with manifest.open(encoding="utf-8") as fh, out.open("w", encoding="utf-8") as log:
-        for row in csv.DictReader(fh):
+    with out.open("w", encoding="utf-8") as log:
+        for row in read_csv_rows(manifest):
             if not row.get("reference", "").strip():
                 skipped += 1
                 continue

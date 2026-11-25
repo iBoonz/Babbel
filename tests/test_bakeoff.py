@@ -126,3 +126,17 @@ def test_env_file_loader(tmp_path, monkeypatch):
     assert set(loaded) == {"BABBEL_T1", "BABBEL_T2", "BABBEL_T3", "BABBEL_T5"}
     for k in loaded:
         monkeypatch.delenv(k)
+
+
+def test_csv_from_belgian_excel(tmp_path):
+    """NFR-11 tooling: Excel on a Belgian Windows saves CSV with a BOM and semicolons."""
+    from babbel.evals.asr_tools import read_csv_rows
+
+    excel = tmp_path / "manifest.csv"
+    excel.write_bytes("\ufeffaudio;reference;dialect\r\nclips/a.wav;ik ben gevallen, echt;wvl\r\n"
+                      .encode("utf-8"))
+    assert read_csv_rows(excel) == [{"audio": "clips/a.wav", "reference": "ik ben gevallen, echt",
+                                     "dialect": "wvl"}]
+    plain = tmp_path / "plain.csv"
+    plain.write_text('audio,reference,dialect\nclips/a.wav,"ja; nee",ovl\n', encoding="utf-8")
+    assert read_csv_rows(plain)[0]["reference"] == "ja; nee"

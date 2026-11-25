@@ -18,19 +18,23 @@ Usage (needs ffmpeg):
 
 --draft runs one speech-to-text provider (see benchmark.py) and puts its text in the `draft`
 column. Copy it to `reference` and correct it by ear: never benchmark against an uncorrected draft.
+To add drafts later without cutting the clips again: python asr/benchmark.py asr/data/manifest.csv
+--provider elevenlabs --fill-drafts
+
+The manifest is written with semicolons and a UTF-8 marker, so Excel on a Belgian Windows opens
+it in columns. Save it again as "CSV (puntkomma-gescheiden)" or "CSV UTF-8"; both are read back.
 """
 
 from __future__ import annotations
 
 import argparse
-import csv
 import subprocess
 import sys
 import zlib
 from pathlib import Path
 
 from babbel.config import load_env_file
-from babbel.evals.asr_tools import choose_cuts, parse_silencedetect
+from babbel.evals.asr_tools import choose_cuts, parse_silencedetect, read_csv_rows, write_csv_rows
 
 MEDIA = {".mp4", ".mov", ".mkv", ".avi", ".m4v", ".webm", ".mp3", ".m4a", ".wav", ".aac",
          ".ogg", ".flac", ".wma", ".3gp"}
@@ -74,9 +78,9 @@ def main() -> None:
     manifest, speakers_csv = out / "manifest.csv", out / "speakers.csv"
     rows, speakers = [], {}
     if args.append and manifest.exists():
-        rows = list(csv.DictReader(manifest.open(encoding="utf-8")))
+        rows = read_csv_rows(manifest)
     if speakers_csv.exists():
-        speakers = {r["source"]: r["speaker"] for r in csv.DictReader(speakers_csv.open(encoding="utf-8"))}
+        speakers = {r["source"]: r["speaker"] for r in read_csv_rows(speakers_csv)}
     elif not args.append and manifest.exists():
         sys.exit(f"{manifest} exists: use --append, or move it away first")
 
@@ -120,14 +124,9 @@ def main() -> None:
                          "reference": "", "draft": draft, "dialect": args.dialect, "speaker": spk,
                          "source_start": a, "source_end": b})
 
-    with manifest.open("w", encoding="utf-8", newline="") as fh:
-        w = csv.DictWriter(fh, fieldnames=FIELDS)
-        w.writeheader()
-        w.writerows({k: r.get(k, "") for k in FIELDS} for r in rows)
-    with speakers_csv.open("w", encoding="utf-8", newline="") as fh:
-        w = csv.DictWriter(fh, fieldnames=["speaker", "source"])
-        w.writeheader()
-        w.writerows({"speaker": s, "source": p} for p, s in speakers.items())
+    write_csv_rows(manifest, FIELDS, rows)
+    write_csv_rows(speakers_csv, ["speaker", "source"],
+                   [{"speaker": s, "source": p} for p, s in speakers.items()])
     print(f"\n{len(rows)} clips in {manifest}. Next: fill in `reference` for each clip "
           f"(what was really said, standard Dutch spelling).")
 
