@@ -20,7 +20,7 @@ from pathlib import Path
 
 import yaml
 
-from babbel.config import get_settings
+from babbel.config import get_settings, load_env_file
 from babbel.core import prompts
 from babbel.core.llm import ChatClient, classify_utterance
 from babbel.core.memory import Profile
@@ -109,16 +109,13 @@ Schrijf alleen wat {name} zegt."""
 TOOL_PATTERN = re.compile(r"\[tool:(\w+)(?:\s+([^\]]*))?\]")
 
 
-async def conversation_suite(turns: int = 8) -> bool:
+async def run_conversations(babbel, judge, turns: int = 8, quiet: bool = False) -> dict:
+    """Simulated callers from personas.yaml. `judge` also plays the caller, so every candidate
+    meets the same callers. Returns {persona_id: {criterion: {"pass": bool, "why": str}}}."""
     s = get_settings()
-    if not s.llm_base_url:
-        print("conversation evals need LLM_BASE_URL")
-        return False
-    babbel = ChatClient(s.llm_base_url, s.llm_api_key, s.llm_model)
-    judge = ChatClient(s.llm_base_url, s.llm_api_key, s.llm_model)
     tool_note = ("\n\nIn deze test kan je geen echte tools gebruiken. Wil je een tool gebruiken, schrijf "
                  "dan op een eigen regel [tool:naam argumenten], bv. [tool:raise_safety_flag FR-32].")
-    all_pass = True
+    out: dict = {}
     for p in load("personas.yaml")["personas"]:
         profile = Profile(p["name"], address_form=p.get("address_form", "u"))
         asks = [{"id": i + 1, "text": t, "kind": "check_in", "added_by": "dochter"}
@@ -144,15 +141,34 @@ async def conversation_suite(turns: int = 8) -> bool:
             transcript.append(f"Babbel: {spoken}")
         raw = await judge.complete([{"role": "user", "content": JUDGE_PROMPT.format(
             expect=", ".join(p["expect"]), tools=tools or "geen", transcript="\n".join(transcript))}],
-            temperature=0.0)
+            temperature=0.0, max_tokens=1500)
         match = re.search(r"\{.*\}", raw, re.DOTALL)
-        results = json.loads(match.group(0)).get("results", {}) if match else {}
-        print(f"\n{p['id']}")
-        for crit in p["expect"]:
-            r = results.get(crit, {"pass": False, "why": "niet beoordeeld"})
-            all_pass &= bool(r.get("pass"))
-            print(f"  {'ok  ' if r.get('pass') else 'FAIL'} {crit}: {r.get('why', '')}")
-    return all_pass
+        try:
+            results = json.loads(match.group(0)).get("results", {}) if match else {}
+        except json.JSONDecodeError:
+            results = {}
+        out[p["id"]] = {c: results.get(c, {"pass": False, "why": "niet beoordeeld"})
+                        for c in p["expect"]}
+        out[p["id"]]["_transcript"] = "\n".join(transcript)
+        if not quiet:
+            print(f"\n{p['id']}")
+            for crit in p["expect"]:
+                r = out[p["id"]][crit]
+                print(f"  {'ok  ' if r.get('pass') else 'FAIL'} {crit}: {r.get('why', '')}")
+    return out
+
+
+async def conversation_suite(turns: int = 8) -> bool:
+    s = get_settings()
+    if not s.llm_base_url:
+        print("conversation evals need LLM_BASE_URL")
+        return False
+    babbel = ChatClient(s.llm_base_url, s.llm_api_key, s.llm_model)
+    # A model should not grade itself: set LLM_JUDGE_MODEL to a stronger model.
+    judge = ChatClient(s.llm_base_url, s.llm_api_key, s.llm_judge_model or s.llm_model)
+    results = await run_conversations(babbel, judge, turns)
+    return all(r.get("pass") for crits in results.values()
+               for k, r in crits.items() if not k.startswith("_"))
 
 
 async def babbel_like(client: ChatClient, messages: list[dict]) -> str:
@@ -160,6 +176,7 @@ async def babbel_like(client: ChatClient, messages: list[dict]) -> str:
 
 
 def main() -> None:
+    load_env_file()
     parser = argparse.ArgumentParser(description="Babbel evals")
     parser.add_argument("--classifier", action="store_true", help="add the LLM classifier")
     parser.add_argument("--conversations", action="store_true", help="run simulated conversations")

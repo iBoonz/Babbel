@@ -29,6 +29,8 @@ family pilot in February 2027. Solo founder: Bert (product manager, healthcare A
 - `make install` — install with agent, asr and dev extras
 - `make test` — pytest (no keys needed); `make lint` — ruff
 - `make evals` — offline safety gate (CI); `make evals-llm` — classifier + simulated callers (needs LLM keys)
+- `make bakeoff` — compare candidate models (`evals/models.yaml`); `make asr-prep` / `make asr-bench` — dialect
+  speech-to-text benchmark on your own recordings. Guide: `docs/model-selection.md`
 - `make api` / `make scheduler` / `make agent` / `make topics`; `docker compose up --build` for everything
 
 ## Layout

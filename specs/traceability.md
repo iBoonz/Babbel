@@ -37,7 +37,8 @@ Requirements tagged **New** in the spec are not built yet and are listed at the 
 | FR-53 | Export and delete | `/seniors/{id}/export`, `DELETE /seniors/{id}` | `test_api::test_export_and_delete` |
 | NFR-02 | Cost ≤ €0.07/min, alert > €0.08 | `core/cost`, `dashboard_data` | `test_cost` |
 | NFR-03 | Idempotent scheduler | `DueCall.idempotency_key`, unique constraint | `test_scheduler::test_no_double_call` |
-| NFR-11 | Dialect speech recognition | `asr/benchmark.py` | WER gate ≤ 25% |
+| NFR-11 | Dialect speech recognition | `asr/prepare_audio.py`, `asr/benchmark.py`, `evals/asr_tools.py` | WER gate ≤ 25% per dialect, safety phrases kept; `test_bakeoff` |
+| D4 | Language model choice | `evals/bakeoff.py`, `evals/providers.py`, `evals/models.yaml`, `tool_cases.yaml`, `memory_cases.yaml` | `test_bakeoff`; `make bakeoff` |
 | NFR-09 | Swappable providers | `config.py`, `agent/providers.py` | — |
 | NFR-10 | All words in locale files | `locales/nl-BE.yaml`, `core/locale.py` | all prompt tests |
 

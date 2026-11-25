@@ -1,0 +1,85 @@
+# Candidates for the model bake-off (spec D4, NFR-01, NFR-02, NFR-04). Run: make bakeoff
+#
+# Each candidate plays Babbel. The judge grades conversations and memory, and plays the
+# simulated callers; it must be a strong model that is NOT one of the candidates under test.
+#
+# Keys are read from the environment variable named in api_key_env (put them in .env, never here).
+# provider: openai     any OpenAI-compatible endpoint (base_url ends in /v1 or equivalent)
+#           anthropic  Claude via the Anthropic SDK; set bedrock_region for Amazon Bedrock (EU)
+# extra:    merged into every request (Claude: output_config/thinking; OpenAI: reasoning_effort ...)
+# price_*:  EUR per 1M tokens, only for the cost estimate in the report
+# eu:       where the data is processed, for the report (NFR-04)
+#
+# Comment out what you have no key for. Model names change often: check each provider's
+# current list before a run.
+
+judge: claude-opus
+
+candidates:
+  # --- Claude (Anthropic) ---------------------------------------------------------------
+  - id: claude-sonnet-low
+    provider: anthropic
+    model: claude-sonnet-5-5
+    api_key_env: ANTHROPIC_API_KEY
+    extra: {output_config: {effort: low}}
+    price_in_per_1m: 1.85
+    price_out_per_1m: 9.25
+    eu: "No (Claude API: global). For EU use bedrock_region: eu-central-1"
+  - id: claude-haiku
+    provider: anthropic
+    model: claude-haiku-5-5
+    api_key_env: ANTHROPIC_API_KEY
+    extra: {output_config: {effort: low}}
+    price_in_per_1m: 0.09
+    price_out_per_1m: 0.46
+    eu: "No (Claude API: global)"
+  # Same model on Amazon Bedrock in Frankfurt (AWS credentials from the environment):
+  # - id: claude-sonnet-bedrock-eu
+  #   provider: anthropic
+  #   model: anthropic.claude-sonnet-5-5
+  #   bedrock_region: eu-central-1
+  #   extra: {output_config: {effort: low}}
+  #   eu: "Yes (AWS eu-central-1)"
+
+  # --- OpenAI on Azure, EU Data Zone (use your own resource and deployment name) ------------
+  # - id: azure-gpt-mini
+  #   provider: openai
+  #   base_url: https://YOUR-RESOURCE.openai.azure.com/openai/v1
+  #   auth_header: api-key
+  #   api_key_env: AZURE_OPENAI_API_KEY
+  #   model: YOUR-DEPLOYMENT-NAME
+  #   eu: "Yes (Azure EU Data Zone)"
+
+  # --- Gemini (OpenAI-compatible endpoint; Vertex AI in an EU region for the pilot) ----------
+  # - id: gemini-flash
+  #   provider: openai
+  #   base_url: https://generativelanguage.googleapis.com/v1beta/openai
+  #   api_key_env: GEMINI_API_KEY
+  #   model: gemini-flash-latest
+  #   eu: "No (AI Studio). Pilot: Vertex AI europe-west"
+
+  # --- Mistral (EU company, EU hosting) ------------------------------------------------------
+  # - id: mistral-medium
+  #   provider: openai
+  #   base_url: https://api.mistral.ai/v1
+  #   api_key_env: MISTRAL_API_KEY
+  #   model: mistral-medium-latest
+  #   temperature: 0.6
+  #   eu: "Yes"
+
+  # --- Open model on your own PC (LM Studio / Ollama), for comparison only -------------------
+  # - id: local-qwen
+  #   provider: openai
+  #   base_url: http://localhost:1234/v1
+  #   api_key_env: ""
+  #   model: qwen3-14b
+  #   temperature: 0.6
+  #   eu: "Yes (your PC; test data only)"
+
+# The judge: listed like a candidate, never in the candidates list above.
+judges:
+  - id: claude-opus
+    provider: anthropic
+    model: claude-opus-5-5
+    api_key_env: ANTHROPIC_API_KEY
+    extra: {output_config: {effort: high}}

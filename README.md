@@ -30,8 +30,10 @@ See `specs/spec.md` for the spec and `specs/traceability.md` for the map from re
 | Topic fetcher | `src/babbel/api/topics.py` | RSS per interest → fresh topics, each offered once (FR-14) |
 | Core logic | `src/babbel/core/` | Pure, tested: safety, scheduling, escalation, memory, prompts, cost |
 | Words | `src/babbel/locales/nl-BE.yaml` | Every sentence Babbel says, every prompt, every safety pattern. Edit wording here, not in code |
-| Evals | `evals/`, `src/babbel/evals/run.py` | Safety gate (CI) and simulated callers graded by an LLM |
-| Dialect ASR | `asr/` | WER benchmark per dialect, and when (not) to fine-tune |
+| Evals | `evals/`, `src/babbel/evals/` | Safety gate (CI), simulated callers graded by an LLM, and the model bake-off (`make bakeoff`) |
+| Dialect ASR | `asr/` | Clips from your own recordings, WER and safety phrases per dialect, and when (not) to fine-tune |
+
+**Choosing the models:** follow [`docs/model-selection.md`](docs/model-selection.md).
 
 ## Run it locally
 

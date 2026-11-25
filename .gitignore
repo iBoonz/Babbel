@@ -9,4 +9,6 @@ dist/
 build/
 *.egg-info/
 asr/data/
-asr/results.jsonl
+asr/results/
+evals/results/*.jsonl
+evals/results/*.json

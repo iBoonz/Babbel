@@ -7,7 +7,33 @@ Every provider is swappable by configuration (NFR-09). Defaults match the
 from __future__ import annotations
 
 import os
+import re
 from dataclasses import dataclass, field
+from pathlib import Path
+
+
+def load_env_file(path: str | Path = ".env") -> list[str]:
+    """Read KEY=VALUE lines from a .env file into os.environ, for local runs (Docker Compose
+    reads .env itself). Variables already set in the environment win. Returns the keys set."""
+    p = Path(path)
+    if not p.is_file():
+        return []
+    loaded = []
+    for line in p.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, value = (part.strip() for part in line.split("=", 1))
+        if key.startswith("export "):
+            key = key[7:].strip()
+        if len(value) >= 2 and value[0] == value[-1] and value[0] in "\"'":
+            value = value[1:-1]
+        else:
+            value = re.split(r"\s+#", value, maxsplit=1)[0].strip()
+        if key and value and key not in os.environ:
+            os.environ[key] = value
+            loaded.append(key)
+    return loaded
 
 
 def _env(name: str, default: str = "") -> str:
@@ -64,6 +90,7 @@ class Settings:
     llm_api_key: str = field(default_factory=lambda: _env("LLM_API_KEY"))
     llm_model: str = field(default_factory=lambda: _env("LLM_MODEL", "gpt-4.1-mini"))
     llm_small_model: str = field(default_factory=lambda: _env("LLM_SMALL_MODEL", ""))
+    llm_judge_model: str = field(default_factory=lambda: _env("LLM_JUDGE_MODEL", ""))  # evals only
     stt_provider: str = field(default_factory=lambda: _env("STT_PROVIDER", "openai"))
     stt_model: str = field(default_factory=lambda: _env("STT_MODEL", "gpt-4o-transcribe"))
     tts_provider: str = field(default_factory=lambda: _env("TTS_PROVIDER", "openai"))

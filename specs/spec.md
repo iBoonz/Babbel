@@ -275,6 +275,8 @@ A release ships only when all four suites pass. They run nightly and on every ch
 
 The offline part of the safety suite (keyword rules) runs in CI with `make evals`; the classifier and simulated seniors run with `make evals-llm`.
 
+**Model selection (D4, D5).** Models are chosen on these tests, not on public leaderboards: `make bakeoff` runs every candidate language model through safety, tool calls, simulated seniors, memory extraction and time to first token, graded by a separate judge model that is never a candidate. `make asr-bench` measures word error rate per dialect and safety phrases lost in transcription on phone-quality clips of real Flemish speech. Step by step: `docs/model-selection.md`.
+
 **Live pilot measures (from the call log):** answer rate per week, median call length, latency, cost per minute, flags per 100 calls, family-update open rate, feedback scores.
 
 ## Open decisions for Bert
@@ -312,5 +314,6 @@ Each has a default so the code can run today; change the default here and the co
 
 | Date | Change |
 |---|---|
+| 2026-11-25 | Added model selection to "Evals and acceptance tests": the model bake-off and the speech-to-text benchmark with safety-phrase check (D4, D5, NFR-11). |
 | 2026-11-24 | Moved the spec from the claude.ai doc into the repo. Grouped the FR table by area. Split FR-10 into FR-10 (profile) and FR-18 (opening picks up memory). Added FR-07 (voicemail), FR-08 (senior's own agreement), FR-23 (someone else answers), FR-38 (line drops during a flag), NFR-11 (dialect speech recognition), D15 (operator cover), D16 (capacity to consent). Defined the week-4 go/no-go and the baseline question. Fixed the opening line (u/je mix, "computervriend") and the cut-off non-goals line. Brought the data model and API tables in line with the code. Safety escalations ignore contact quiet hours (FR-44). NFR-04 adds a DPIA; NFR-06 hashes SMS codes. |
 | 2026-11-24 | v0.1 written in the claude.ai doc. |

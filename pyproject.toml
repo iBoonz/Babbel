@@ -21,12 +21,14 @@ agent = [
   "livekit-api>=1.2",
 ]
 asr = ["jiwer>=3.0"]
+bakeoff = ["anthropic>=2.14"]  # model bake-off: Claude via the Anthropic SDK
 dev = ["pytest>=8", "ruff>=0.6"]
 
 [project.scripts]
 babbel-api = "babbel.api.main:run"
 babbel-scheduler = "babbel.api.scheduler_runner:main"
 babbel-evals = "babbel.evals.run:main"
+babbel-bakeoff = "babbel.evals.bakeoff:main"
 babbel-topics = "babbel.api.topics:main"
 
 [build-system]
