@@ -90,6 +90,7 @@ All requirements below are in the first version (MVP). Each ID is referenced in 
 | FR-16 | Help requests: when the person wants to do something and needs company or help (shopping, a walk, an outing), create a request to the family admin and, where set up, a partner such as Helpper | Request created only with the person's consent and confirmed to the family; nothing is booked without the family or the person confirming |
 | FR-17 | First-call introduction: explain who Babbel is, that the family set it up, and how often it will call | Spoken on 100% of first calls; names the family member and the call rhythm |
 | FR-18 | Every later call opens by saying who Babbel is and picks up what was said last time or what the family shared (split out of FR-10) | In eval, 100% of calls say who is calling; 80% of follow-up calls pick up a thread from memory or the family |
+| FR-19 | **New (partly built).** Understand West- and East-Flemish: a dialect lexicon (`src/babbel/locales/dialects/vlaams.yaml`) supplies hint words for speech to text and, if the bake-off shows it helps, a glossary in the live prompt | Every dialect safety phrase in the lexicon triggers the keyword rules or is marked classifier-only; the glossary goes into the live prompt only if the bake-off dialect suite shows better understanding with it. Built: lexicon (draft, to be checked by a native speaker), hints in the ASR benchmark, dialect suite. Not built: hints and glossary in the live agent |
 
 **Honesty and boundaries**
 
@@ -316,6 +317,7 @@ Each has a default so the code can run today; change the default here and the co
 
 | Date | Change |
 |---|---|
+| 2026-11-25 | Added FR-19 (West- and East-Flemish lexicon). Ten dialect safety phrases the keyword rules missed ("uitgeschoven", "flauwgevallen", "'t wordt mij zwart voor mijn ogen", "'t moet voor mij nie meer", "ze mogen mij komen halen", "ik zie het nie meer zitten", bankkaart and itsme requests) were added to the safety cases and the patterns fixed; gate still 100%, no false alarms. |
 | 2026-11-25 | Added D17 (audio for a dialect speech model versus FR-11) and D18 (1.5 s silence rule versus NFR-01). README states the first goal: understanding West- and East-Flemish. |
 | 2026-11-25 | Added model selection to "Evals and acceptance tests": the model bake-off and the speech-to-text benchmark with safety-phrase check (D4, D5, NFR-11). |
 | 2026-11-24 | Moved the spec from the claude.ai doc into the repo. Grouped the FR table by area. Split FR-10 into FR-10 (profile) and FR-18 (opening picks up memory). Added FR-07 (voicemail), FR-08 (senior's own agreement), FR-23 (someone else answers), FR-38 (line drops during a flag), NFR-11 (dialect speech recognition), D15 (operator cover), D16 (capacity to consent). Defined the week-4 go/no-go and the baseline question. Fixed the opening line (u/je mix, "computervriend") and the cut-off non-goals line. Brought the data model and API tables in line with the code. Safety escalations ignore contact quiet hours (FR-44). NFR-04 adds a DPIA; NFR-06 hashes SMS codes. |

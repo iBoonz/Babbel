@@ -146,6 +146,16 @@ missed_connection: "{product}: {name} wilde u graag spreken. Kunt u bellen tusse
 
 bridge_announcement: "Dag {contact}, met {product}, de computerstem van {name}. {name} wil u graag even spreken. Past dat nu? Zeg ja of nee."
 
+dialect_glossary_header: |
+  Vlaamse en dialectwoorden die de persoon kan gebruiken (de tekst komt van spraakherkenning en kan
+  dialect of fouten bevatten; vraag na als je het niet zeker begrijpt):
+
+dialect_meaning_prompt: |
+  Hieronder staat een zin van een oudere beller uit West- of Oost-Vlaanderen, zoals spraakherkenning
+  hem uitschreef. Wat bedoelt de persoon? Antwoord met een zin in standaard Nederlands, niets anders.
+  {glossary}
+  Zin: "{utterance}"
+
 safety_patterns:
   # FR-30 to FR-36 keyword rules. Lowercased, apostrophes normalised. Regex syntax.
   # Includes common West- and East-Flemish variants. A false alarm is acceptable; a miss is not.
@@ -157,6 +167,8 @@ safety_patterns:
       - "\\b(geraak|kan|kun|kan ik)\\s+(niet|nie|ni)\\s+(meer\\s+)?(recht|op|overeind|omhoog)\\b"
       - "\\bop de grond\\b"
       - "\\b(gekwetst|verwond|bloed)\\b"
+      - "\\b(uitgeschoven|uitgeschoten|uitgegleden|uitgeslipt|gestruikeld)\\b"
+      - "\\b(flauwgevallen|flauw gevallen|van (mijn|men|m'n) stokje gegaan)\\b"
   FR-31:
     severity: critical
     patterns:
@@ -167,6 +179,9 @@ safety_patterns:
       - "\\b(arm|been|kant) (is|voelt) (verlamd|lam|slap|dood)\\b"
       - "\\bscheve mond\\b"
       - "\\bkan (niet|nie) meer (goed )?praten\\b"
+      - "\\b(ik|'k|k)\\s+(wier|werd|word|worde)\\s+(slecht|onwel)\\b"
+      - "\\bonwel\\b"
+      - "\\bzwart voor (mijn|men|m'n|de) ogen\\b"
   FR-32:
     severity: critical
     patterns:
@@ -178,6 +193,9 @@ safety_patterns:
       - "\\bniemand (zou|gaat) (mij|me) missen\\b"
       - "\\bzelfmoord\\b"
       - "\\bhet heeft geen zin meer\\b"
+      - "\\b(het|'t|t)\\s+(moet|hoeft|mag)\\s+voor\\s+(mij|me)\\s+(niet|nie|ni)\\s+meer\\b"
+      - "\\b(ze|hij|god)\\s+(mogen|mag)\\s+(mij|me)\\s+(komen\\s+)?halen\\b(?!\\s+(om|voor|naar|met|bij|aan|op))"
+      - "\\b(zie|zien)\\s+(het|'t|t)\\s+(echt\\s+|helemaal\\s+)?(niet|nie|ni)\\s+meer\\s+zitten\\b"
   FR-33:
     severity: high
     patterns:
@@ -185,6 +203,7 @@ safety_patterns:
       - "\\bgeld (overschrijven|overmaken|storten|sturen|opsturen)\\b"
       - "\\bnieuw (gsm-?)?nummer\\b"
       - "\\b(de bank|de politie|iemand van de bank) (heeft|had) (gebeld|getelefoneerd)\\b"
+      - "\\b(vroeg|vroegen|vraagt|vragen|wilde|wilden|wou|wouden)\\b.{0,40}\\b(bankkaart|itsme)\\b"
   FR-37:
     severity: low
     patterns:

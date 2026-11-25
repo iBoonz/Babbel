@@ -52,10 +52,12 @@ except ImportError:  # pragma: no cover
     sys.exit("pip install jiwer (or: pip install -e '.[asr]')")
 
 from babbel.config import load_env_file
+from babbel.core.dialect import stt_hints
 from babbel.core.safety import KeywordDetector
 from babbel.evals.asr_tools import safety_misses
 
 PROMPT = "Vlaams gesprek met een oudere persoon. Namen: {names}."
+HINTS = " Woorden: {hints}."  # FR-19: dialect forms from locales/dialects/vlaams.yaml
 DEFAULT_MODELS = {"openai": "gpt-4o-transcribe", "elevenlabs": "scribe_v1", "deepgram": "nova-3",
                   "azure": "fast", "speechmatics": "enhanced"}
 
@@ -74,7 +76,7 @@ def _key(*names: str) -> str:
 
 
 def make_transcriber(provider: str, model: str = "", *, base_url: str = "", region: str = "",
-                     names: str = ""):
+                     names: str = "", hints: list[str] | None = None):
     """Returns a function path -> transcript text for one provider."""
     model = model or DEFAULT_MODELS.get(provider, "")
     http = httpx.Client(timeout=300)
@@ -87,7 +89,8 @@ def make_transcriber(provider: str, model: str = "", *, base_url: str = "", regi
             with path.open("rb") as fh:
                 r = http.post(f"{url}/audio/transcriptions", headers={"Authorization": f"Bearer {key}"},
                               data={"model": model, "language": "nl",
-                                    "prompt": PROMPT.format(names=names or "-")},
+                                    "prompt": PROMPT.format(names=names or "-")
+                                    + (HINTS.format(hints=", ".join(hints)) if hints else "")},
                               files={"file": (path.name, fh)})
             r.raise_for_status()
             return r.json().get("text", "")
@@ -177,17 +180,23 @@ def main() -> None:
     ap.add_argument("--phone", action="store_true", help="use the phone-line copies (audio_phone)")
     ap.add_argument("--names", default="", help="comma-separated names to bias recognition")
     ap.add_argument("--locale", default="nl-BE", help="locale pack for the safety rules")
+    ap.add_argument("--dialect-hints", default="", metavar="REGION",
+                    help="wvl or ovl: pass dialect words from the lexicon as hints (openai provider only)")
     args = ap.parse_args()
 
     manifest = Path(args.manifest)
     model = args.model or DEFAULT_MODELS.get(args.provider, "")
+    hints = stt_hints(args.dialect_hints) if args.dialect_hints else None
+    if hints and args.provider != "openai":
+        print("note: --dialect-hints is only passed to the openai provider for now")
     transcribe = make_transcriber(args.provider, model, base_url=args.base_url,
-                                  region=args.region, names=args.names)
+                                  region=args.region, names=args.names, hints=hints)
     detector = KeywordDetector(args.locale)
     refs: dict[str, list[str]] = defaultdict(list)
     hyps: dict[str, list[str]] = defaultdict(list)
     safety_total, safety_lost, skipped, failed = 0, [], 0, 0
-    label = f"{args.provider}-{model}{'-phone' if args.phone else ''}".replace("/", "_")
+    label = (f"{args.provider}-{model}{'-phone' if args.phone else ''}"
+             f"{'-hints' if hints else ''}").replace("/", "_")
     out = Path("asr/results") / f"{label}.jsonl"
     out.parent.mkdir(parents=True, exist_ok=True)
 

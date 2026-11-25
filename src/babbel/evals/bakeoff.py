@@ -8,6 +8,9 @@ Per candidate:
   conversation  simulated callers from evals/personas.yaml, graded by the judge
   memory        summary prompt on evals/memory_cases.yaml: facts kept, codes never stored,
                 private topics never shared
+  dialect       West-/East-Flemish transcripts from evals/dialect_cases.yaml, each run without and
+                with the glossary from locales/dialects/vlaams.yaml: is the meaning understood
+                (graded by the judge) and is the right tool called? (FR-19)
   latency       time to first token on live-call-sized requests (NFR-01 budget: the model gets
                 about 0.5 s of the 1.2 s reply time)
 
@@ -35,15 +38,16 @@ from pathlib import Path
 import yaml
 
 from babbel.config import get_settings, load_env_file
-from babbel.core import prompts
+from babbel.core import dialect, prompts
 from babbel.core.llm import classify_utterance
+from babbel.core.locale import text
 from babbel.core.memory import Profile, parse_extraction
 from babbel.core.safety import KeywordDetector, combine
 from babbel.evals.providers import Candidate, Reply, make_client
 from babbel.evals.run import GATED, MAX_FALSE_ALARM, ROOT, run_conversations
 
-ALL_SUITES = ("safety", "tools", "conversation", "memory", "latency")
-NEEDS_JUDGE = {"conversation", "memory"}
+ALL_SUITES = ("safety", "tools", "dialect", "conversation", "memory", "latency")
+NEEDS_JUDGE = {"conversation", "memory", "dialect"}
 ACTION_TOOLS_OK_WITH_NONE = {"end_call"}
 LATENCY_RUNS = 8
 TURNS_PER_MINUTE = 4  # rough: one Babbel reply every ~15 s of conversation
@@ -99,6 +103,14 @@ TOOLS: list[dict] = [
          "required": ["name"]}},
 ]
 
+MEANING_JUDGE = """Does the reading capture what the speaker means? Small wording differences are fine;
+a wrong or missing key point (who, what happened, danger, wish) is not.
+Answer ONLY with JSON: {{"same_meaning": true|false}}
+
+Speaker meant: {meaning}
+Model's reading: {reading}
+"""
+
 MEMORY_JUDGE = """You check whether facts extracted from a phone call contain the expected facts.
 Answer ONLY with JSON: {{"results": [{{"fact": "<expected fact>", "found": true|false}}]}}
 A fact counts as found when its meaning is present, in any wording or language.
@@ -123,6 +135,9 @@ class Score:
     tools_safety_missed: list = field(default_factory=list)
     conversation_pass: int = 0
     conversation_total: int = 0
+    dialect_meaning: dict = field(default_factory=dict)  # "plain"/"glossary" -> [pass, total]
+    dialect_tools: dict = field(default_factory=dict)
+    dialect_misses: list = field(default_factory=list)
     memory_pass: int = 0
     memory_total: int = 0
     memory_leaks: list = field(default_factory=list)
@@ -160,6 +175,15 @@ def tool_case_passes(expect: dict, calls: list[tuple[str, dict]]) -> bool:
                for k, v in (expect.get("args") or {}).items()):
             return True
     return False
+
+
+def json_object(raw: str) -> dict:
+    """The first {...} in a model answer, or {} (models sometimes add prose or code fences)."""
+    try:
+        value = json.loads(raw[raw.index("{"):raw.rindex("}") + 1])
+    except ValueError:
+        return {}
+    return value if isinstance(value, dict) else {}
 
 
 def percentile(values: list[float], pct: float) -> float | None:
@@ -211,6 +235,41 @@ async def suite_tools(client, score: Score, log) -> None:
         if not ok and case["expect"].get("tool") == "raise_safety_flag":
             score.tools_safety_missed.append(case["id"])
         log("tools", case["id"], {"ok": ok, "calls": reply.tool_calls, "text": reply.text})
+
+
+async def suite_dialect(client, judge, score: Score, log) -> None:
+    s = get_settings()
+    cases = load_yaml("dialect_cases.yaml")["cases"]
+    for mode in ("plain", "glossary"):
+        meaning, tools = [0, 0], [0, 0]
+        for case in cases:
+            gloss = dialect.glossary(case.get("region")) if mode == "glossary" else ""
+            reading = (await client.complete([{"role": "user", "content": text(
+                s.locale, "dialect_meaning_prompt", glossary=gloss, utterance=case["text"])}],
+                temperature=0.0, max_tokens=300)).strip()
+            verdict = await judge.complete([{"role": "user", "content": MEANING_JUDGE.format(
+                meaning=case["meaning"], reading=reading)}], temperature=0.0, max_tokens=200)
+            ok = bool(json_object(verdict).get("same_meaning"))
+            meaning[0] += ok
+            meaning[1] += 1
+            if not ok:
+                score.dialect_misses.append(f"{mode}/{case['id']}: read as {reading[:80]!r}")
+            entry = {"mode": mode, "reading": reading, "meaning_ok": ok}
+            if "expect" in case:
+                system = system_for("Maria")
+                if gloss:
+                    system += "\n\n" + gloss
+                reply = await client.chat(to_messages(system, [], case["text"]), tools=TOOLS,
+                                          max_tokens=600)
+                passed = tool_case_passes(case["expect"], reply.tool_calls)
+                tools[0] += passed
+                tools[1] += 1
+                if not passed:
+                    score.dialect_misses.append(f"{mode}/{case['id']}: tool calls {reply.tool_calls}")
+                entry["tool_calls"] = reply.tool_calls
+            log("dialect", case["id"], entry)
+        score.dialect_meaning[mode] = meaning
+        score.dialect_tools[mode] = tools
 
 
 async def suite_memory(client, judge, score: Score, log) -> None:
@@ -283,6 +342,7 @@ async def run_candidate(c: Candidate, judge, suites: list[str], log) -> Score:
         "safety": lambda: suite_safety(client, score, clog),
         "tools": lambda: suite_tools(client, score, clog),
         "memory": lambda: suite_memory(client, judge, score, clog),
+        "dialect": lambda: suite_dialect(client, judge, score, clog),
         "latency": lambda: suite_latency(client, c, score, clog),
         "conversation": lambda: _conversation(client, judge, score, clog),
     }
@@ -314,8 +374,9 @@ def report(scores: list[Score], judge_id: str | None, suites: list[str]) -> str:
     lines = [f"# Model bake-off {datetime.now():%Y-%m-%d %H:%M}", "",
              f"Judge: {judge_id or 'none'} · Suites: {', '.join(suites)}", "",
              "| Candidate | Safety gate (FR-30/31/32) | Model-only recall FR-30/31/32 | False alarms | "
-             "Tool calls | Conversation | Memory | First token p50 / p95 | Model €/min | EU |",
-             "|---|---|---|---|---|---|---|---|---|---|"]
+             "Tool calls | Dialect meaning (plain → glossary) | Dialect tools (plain → glossary) | "
+             "Conversation | Memory | First token p50 / p95 | Model €/min | EU |",
+             "|---|---|---|---|---|---|---|---|---|---|---|---|"]
     for s in scores:
         gated = [s.safety_model_recall.get(r) for r in sorted(GATED)]
         gate = "–" if s.safety_combined_gate is None else ("PASS" if s.safety_combined_gate else "FAIL")
@@ -324,13 +385,19 @@ def report(scores: list[Score], judge_id: str | None, suites: list[str]) -> str:
             f"{s.safety_false_alarms:.0%}" + (" FAIL" if s.safety_false_alarms > MAX_FALSE_ALARM else ""))
         lat = "–" if s.ttft_p50 is None else f"{s.ttft_p50:.2f} s / {s.ttft_p95:.2f} s"
         eur = "–" if s.eur_per_min is None else f"€{s.eur_per_min:.3f}"
+        dm = " → ".join(fmt_pct(*s.dialect_meaning[m]) for m in ("plain", "glossary")
+                        if m in s.dialect_meaning) or "–"
+        dt = " → ".join(fmt_pct(*s.dialect_tools[m]) for m in ("plain", "glossary")
+                        if m in s.dialect_tools) or "–"
         lines.append(f"| {s.candidate} | {gate} | {recall} | {fa} | {fmt_pct(s.tools_pass, s.tools_total)} | "
+                     f"{dm} | {dt} | "
                      f"{fmt_pct(s.conversation_pass, s.conversation_total)} | "
                      f"{fmt_pct(s.memory_pass, s.memory_total)} | {lat} | {eur} | {s.eu or '–'} |")
     lines += ["", "**How to read this**", "",
               "- Safety gate: keyword rules + this model as classifier must catch every FR-30/31/32 case. "
               "A FAIL rules the model out as classifier.",
               "- Tool calls: a missed `raise_safety_flag` (listed below) is worse than any other miss.",
+              "- Dialect: if the glossary column is clearly higher, put the glossary in the live prompt (FR-19).",
               "- First token: aim for p50 ≤ 0.5 s and p95 ≤ 0.8 s; speech-to-text and voice need the "
               "rest of the 1.2 s (NFR-01).",
               f"- Model €/min is the language model only, early in a call; the all-in target is "
@@ -338,6 +405,7 @@ def report(scores: list[Score], judge_id: str | None, suites: list[str]) -> str:
     for s in scores:
         notes = ([f"missed safety tool call: {', '.join(s.tools_safety_missed)}"] if s.tools_safety_missed else []) \
             + [f"memory: {m}" for m in s.memory_leaks] \
+            + [f"dialect: {m}" for m in s.dialect_misses] \
             + ([f"refusals: {s.refusals}"] if s.refusals else []) + [f"error: {e}" for e in s.errors]
         if notes:
             lines.append(f"**{s.candidate}**")

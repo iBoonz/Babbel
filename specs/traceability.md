@@ -20,9 +20,10 @@ Requirements tagged **New** in the spec are not built yet and are listed at the 
 | FR-15 | Local activities | `LocalActivity`, `api/main.call_context`, `core/prompts.activities_block` | `test_api::test_topics_offered_once_and_activities_matched` |
 | FR-16 | Help requests (family, Helpper) | `BabbelAgent.request_help`, `POST /internal/help-requests` | `test_api::test_help_request_goes_to_family_and_partner` |
 | FR-17 | First-call introduction | `core/prompts.first_call_line`, `opening_line`, locale `first_call` | `test_prompts::test_first_call...`, `test_api::test_first_call_flag...` |
+| FR-19 | West- and East-Flemish lexicon (partly built) | `locales/dialects/vlaams.yaml`, `core/dialect.py`, `asr/benchmark.py --dialect-hints`, bake-off `dialect` suite | `test_dialect`, `evals/dialect_cases.yaml` |
 | FR-20 | AI disclosure every call | `core/prompts.disclosure_line`, `BabbelAgent.on_enter` | `test_prompts::test_disclosure...` |
 | FR-21/22 | Truthful; no medical/legal/financial advice | locale `system_prompt` | persona evals (roger-ovl) |
-| FR-30–36 | Safety triggers and escalation | `core/safety`, `core/escalation`, `api/main.open_escalation`, `process_due_steps` | `test_safety`, `test_escalation`, `test_api::test_urgent...`, `test_api::test_missed_calls...`, `babbel-evals` |
+| FR-30–36 | Safety triggers and escalation (keyword rules include dialect variants from the lexicon) | `core/safety`, `core/escalation`, `api/main.open_escalation`, `process_due_steps` | `test_safety`, `test_escalation`, `test_api::test_urgent...`, `test_api::test_missed_calls...`, `babbel-evals` |
 | FR-37 | Wellbeing: repetition, fear | `core/safety.RepetitionTracker`, locale `FR-37` patterns, `api/main.raise_wellbeing` | `test_safety::test_repetition...`, `test_api::test_wellbeing...` |
 | FR-40 | Onboarding, SMS-verified contacts | `POST /seniors`, `/contacts`, `/verify`, `/schedule`, `/consents` | `conftest.senior`, `test_api` |
 | FR-41 | Family update after each call | `api/main.complete_call` | `test_api::test_call_complete...` |

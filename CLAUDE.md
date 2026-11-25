@@ -37,7 +37,9 @@ family pilot in February 2027. Solo founder: Bert (product manager, healthcare A
 - `src/babbel/agent/` LiveKit voice agent (one job per call), provider builders, backend client
 - `src/babbel/api/` FastAPI backend, SQLModel tables, scheduler runner, topic fetcher
 - `src/babbel/core/` safety, scheduler, escalation, memory, prompts, cost, llm, notify, locale
-- `evals/` safety cases and personas; `asr/` dialect WER benchmark
+- `evals/` safety, tool, dialect and memory cases, personas, bake-off candidates; `asr/` dialect WER benchmark
+- `src/babbel/locales/dialects/vlaams.yaml` West-/East-Flemish lexicon (draft): every dialect safety phrase
+  in it must trigger the keyword rules or be marked `classifier_only` (tests/test_dialect.py)
 
 ## Next up (not built yet)
 Family portal UI + magic-link logins; WhatsApp channel; private bridge announcement with contact

@@ -156,6 +156,9 @@ make asr-bench PROVIDER=elevenlabs
 python asr/benchmark.py asr/data/manifest.csv --provider azure --region westeurope --phone
 ```
 
+Add `--dialect-hints wvl` (or `ovl`) to pass dialect words from the lexicon as hints (OpenAI-compatible
+providers only for now) and compare with a run without.
+
 Each run prints the word error rate per dialect and how many **safety phrases** survived
 transcription, and saves every transcript in `asr/results/`.
 
@@ -213,6 +216,7 @@ What each test measures:
 | Safety | Does the model, as classifier, catch falls, emergencies, suicidal thoughts, scams, fear? Without false alarms? | `evals/safety_cases.yaml` |
 | Tool calls | With Babbel's real prompt and tools: does it raise the right alarm, pause, forget, answer the family question, ask for help, call Lotte, and stay calm on "doodmoe" or "in slaap gevallen"? | `evals/tool_cases.yaml` |
 | Conversation | Six simulated callers (Maria from Torhout, Roger with his back, Annie who repeats, Jos and the scam, lonely Kim, Georges in crisis), graded by the judge on warmth, one question per turn, no advice | `evals/personas.yaml` |
+| Dialect | West- and East-Flemish transcripts (as speech recognition might write them): is the meaning understood, and is the right alarm raised? Each case runs **without and with** the dialect glossary, so you see whether the glossary helps | `evals/dialect_cases.yaml`, `src/babbel/locales/dialects/vlaams.yaml` |
 | Memory | Summaries after a call: are the right facts kept, is the bank code never stored, does the private quarrel stay out of the family message? | `evals/memory_cases.yaml` |
 | Latency | Time to the first word on live-call-sized requests | – |
 

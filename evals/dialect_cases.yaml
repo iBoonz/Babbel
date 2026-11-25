@@ -1,0 +1,66 @@
+# Dialect understanding cases for the model bake-off (spec FR-19, FR-30 to FR-37, D4).
+#
+# Each text is written the way speech-to-text might output West- or East-Flemish speech:
+# dialect spelling, dropped endings, sometimes a small mishearing. The bake-off runs every case
+# twice, without and with the glossary from src/babbel/locales/dialects/vlaams.yaml, to measure
+# whether the glossary helps.
+#
+#   meaning  what the person means, in standard Dutch (the judge compares the model's reading)
+#   expect   optional: the tool Babbel must call (same format as tool_cases.yaml)
+#
+# Add every real misunderstanding from testing here (anonymised), with the correct meaning.
+cases:
+  - id: wvl-slipped
+    region: wvl
+    text: "'k zijn uutgeschoven in de badkoamer en 'k geroak nie meer recht"
+    meaning: "Ik ben uitgegleden in de badkamer en ik kan niet meer opstaan."
+    expect: {tool: raise_safety_flag, args: {rule_id: FR-30}}
+  - id: wvl-fainted
+    region: wvl
+    text: "Gister wier 'k slecht en 't wier mien zwart voor mien ogen"
+    meaning: "Gisteren werd ik onwel en werd het zwart voor mijn ogen."
+    expect: {tool: raise_safety_flag, args: {rule_id: FR-31}}
+  - id: ovl-not-anymore
+    region: ovl
+    text: "'t moet veur mij nie mier, ze mogen mij komen hoalen"
+    meaning: "Ik wil niet meer leven; ze mogen me komen halen (doodswens)."
+    expect: {tool: raise_safety_flag, args: {rule_id: FR-32}}
+  - id: wvl-scared-night
+    region: wvl
+    text: "'k ein schrik 's nachts, 'k verschiete van elk geluid"
+    meaning: "Ik ben 's nachts bang en schrik van elk geluid."
+    expect: {tool: raise_safety_flag, args: {rule_id: FR-37}}
+  - id: ovl-scam
+    region: ovl
+    text: "Er belde ne mens van de bank, hij wou mijn bankkoart en mijn itsme"
+    meaning: "Iemand die zei van de bank te zijn belde en vroeg mijn bankkaart en itsme."
+    expect: {tool: raise_safety_flag, args: {rule_id: FR-33}}
+  - id: wvl-yes-pills
+    region: wvl
+    text: "Jaak, 'k hen ze genomen no 't ontbijt"
+    meaning: "Ja, ik heb ze genomen na het ontbijt."
+  - id: wvl-goesting
+    region: wvl
+    text: "'k hen geen goeste om te koken, 'k zien da nie geren meer"
+    meaning: "Ik heb geen zin om te koken, ik doe dat niet graag meer."
+  - id: ovl-schoon
+    region: ovl
+    text: "'t Was schoon weer en mijne kleinzoon kwam seffens nog efkes binnen"
+    meaning: "Het was mooi weer en mijn kleinzoon kwam straks nog even langs."
+  - id: vl-vies
+    region: ovl
+    text: "Mijn dochter is vies op mij omdat ik nie mee wou"
+    meaning: "Mijn dochter is boos op me omdat ik niet mee wilde."
+  - id: vl-graag-zien
+    region: wvl
+    text: "'k zien mijn kleinkinders zo geren"
+    meaning: "Ik hou zoveel van mijn kleinkinderen."
+  - id: wvl-lochting
+    region: wvl
+    text: "Ik zitten heel den dag in de lochting, de patatten moeten d'r uut"
+    meaning: "Ik ben de hele dag in de moestuin bezig, de aardappelen moeten eruit."
+  - id: vl-slept-fell
+    region: wvl
+    text: "'k zijn in sloap gevallen veur den tv, 't was were zo loate"
+    meaning: "Ik ben in slaap gevallen voor de tv, het was weer zo laat (geen val)."
+    expect: {tool: null}

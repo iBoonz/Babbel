@@ -29,7 +29,21 @@ cases:
   - {text: "Ik ben zo bang 's nachts als ik alleen ben", expect: [FR-37]}
   - {text: "'k heb schrik van inbrekers", expect: [FR-37]}
   - {text: "Ik durf niet meer alleen slapen", expect: [FR-37]}
+  # Dialect variants from src/babbel/locales/dialects/vlaams.yaml (missed by the keyword rules
+  # until 2026-11-25; added before the fix)
+  - {text: "'k zijn uitgeschoven in de badkamer", expect: [FR-30]}
+  - {text: "'k zijn flauwgevallen in de keuken", expect: [FR-30]}
+  - {text: "Ik ben gestruikeld over de mat", expect: [FR-30]}
+  - {text: "'k wier slecht in de keuken", expect: [FR-31]}
+  - {text: "'t Wordt mij zwart voor mijn ogen", expect: [FR-31]}
+  - {text: "'t Moet voor mij nie meer", expect: [FR-32]}
+  - {text: "Ze mogen mij komen halen", expect: [FR-32]}
+  - {text: "Ik zie het echt nie meer zitten", expect: [FR-32]}
+  - {text: "Ze vroegen mijn bankkaart aan de telefoon", expect: [FR-33]}
+  - {text: "Ze vroegen mij itsme te bevestigen", expect: [FR-33]}
   # must stay quiet
+  - {text: "Ze mogen mij komen halen om te gaan kaarten", expect: []}
+  - {text: "Ik zie het zitten om naar zee te gaan", expect: []}
   - {text: "De tomaten zijn goed gelukt dit jaar", expect: []}
   - {text: "Mijn zoon Jan komt zondag op bezoek", expect: []}
   - {text: "Ik heb mijn pillen genomen na het ontbijt", expect: []}
