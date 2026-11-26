@@ -140,3 +140,89 @@ def test_csv_from_belgian_excel(tmp_path):
     plain = tmp_path / "plain.csv"
     plain.write_text('audio,reference,dialect\nclips/a.wav,"ja; nee",ovl\n', encoding="utf-8")
     assert read_csv_rows(plain)[0]["reference"] == "ja; nee"
+
+
+def test_local_whisper_provider_runs_on_this_pc(monkeypatch, tmp_path):
+    """NFR-11, D5: `--provider local` transcribes with faster-whisper, no key, no network."""
+    import importlib.util
+    import sys
+    import types
+
+    calls = {}
+
+    class FakeModel:
+        def __init__(self, name, device, compute_type):
+            calls["init"] = (name, device, compute_type)
+
+        def transcribe(self, path, **kw):
+            calls["kw"] = kw
+            return [types.SimpleNamespace(text=" ik ben "), types.SimpleNamespace(text="gevallen ")], None
+
+    monkeypatch.setitem(sys.modules, "faster_whisper", types.SimpleNamespace(WhisperModel=FakeModel))
+    for key in ("OPENAI_API_KEY", "STT_API_KEY", "WHISPER_DEVICE", "WHISPER_COMPUTE"):
+        monkeypatch.delenv(key, raising=False)
+    import subprocess
+    monkeypatch.setattr(subprocess, "run", lambda *a, **k: types.SimpleNamespace(stdout=b"\0" * 64000))
+    spec = importlib.util.spec_from_file_location("asr_benchmark", Path("asr/benchmark.py"))
+    bench = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(bench)
+
+    run = bench.make_transcriber("local", hints=["gevallen"])
+    assert run(tmp_path / "clip.wav") == "ik ben gevallen"
+    assert calls["init"] == ("large-v3-turbo", "auto", "int8")
+    assert calls["kw"]["language"] == "nl" and "gevallen" in calls["kw"]["initial_prompt"]
+
+
+def test_clean_transcript_strips_corpus_marks_and_fillers():
+    """NFR-11: dialect transcripts and model output are compared on the same footing."""
+    from babbel.evals.asr_tools import clean_transcript
+
+    assert clean_transcript("awel a · k zeggen uh da · me wijder ...") == "awel a k zeggen da me wijder"
+    assert clean_transcript("k·waren ??? daa ggg xxx [...] hé.") == "k waren daa hé"
+    assert clean_transcript("Ik ben gevallen, MHM, 't is erg!") == "ik ben gevallen t is erg"
+
+
+def test_spell_numbers_and_shared_sample():
+    """NFR-11: digits and spelled-out numbers score alike; every model gets the same clips."""
+    import importlib.util
+
+    import pytest
+
+    from babbel.evals.asr_tools import spell_numbers
+
+    if importlib.util.find_spec("num2words"):
+        assert spell_numbers("in 1910 twaalf") != "in 1910 twaalf"
+        assert "1910" not in spell_numbers("in 1910")
+    spec = importlib.util.spec_from_file_location("asr_compare", Path("asr/compare_models.py"))
+    cmp = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(cmp)
+    rows = [{"recording": f"R{i % 2}", "audio": f"a{i}.wav", "gcnd_text": "ik ben hier", "reference": "",
+             "source_start": "0", "source_end": "3"} for i in range(40)]
+    rows[0]["reference"] = "ik ben hier"
+    a, b = cmp.sample(rows, "gcnd_text", 5, 11), cmp.sample(list(reversed(rows)), "gcnd_text", 5, 11)
+    assert sorted(r["audio"] for r in a) == sorted(r["audio"] for r in b)
+    assert "a0.wav" in {r["audio"] for r in a} and len(a) == 10
+    with pytest.raises(SystemExit):
+        cmp.make_backend("nope:model")
+
+
+def test_training_clips_hold_out_whole_recordings():
+    """NFR-11: no speaker on both sides of the split; same rule for every model."""
+    from babbel.evals.asr_tools import training_clips
+
+    rows = [{"recording": "A", "gcnd_text": "k·zijn gevallen", "source_start": "0", "source_end": "4"},
+            {"recording": "B", "gcnd_text": "ggg", "source_start": "0", "source_end": "4"},
+            {"recording": "B", "gcnd_text": "ja ja", "source_start": "0", "source_end": "40"},
+            {"recording": "C", "gcnd_text": "awel", "source_start": "0", "source_end": "3"}]
+    out = training_clips(rows, "gcnd_text", {"C"})
+    assert [r["text"] for r in out] == ["k zijn gevallen"]
+
+
+def test_tail_clips_hold_out_the_end_of_every_recording():
+    """NFR-11: the last block of each recording is held out, never interleaved clips."""
+    from babbel.evals.asr_tools import tail_clips
+
+    rows = [{"recording": rec, "audio": f"{rec}{i}", "source_start": str(i * 10)}
+            for rec in "AB" for i in range(10)]
+    held = tail_clips(rows, 0.3)
+    assert held == {"A7", "A8", "A9", "B7", "B8", "B9"}

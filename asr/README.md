@@ -28,6 +28,14 @@ family and places are already passed as a prompt by `providers.build_stt`) and m
   Nederlandse Taal, licence required; Common Voice nl, filtered on Belgian accents).
 - Method: LoRA/PEFT fine-tune with Hugging Face `transformers` on one rented GPU
   (A100/H100, a few hours for ~50–100 h of audio). Keep a held-out set of speakers you never train on.
+  `asr/finetune_whisper.py` does this from a manifest with a `recording` column: `--eval-only` measures
+  the base model on the held-out recordings, a normal run trains a LoRA adapter and measures again.
+  It also runs on a 16 GB AMD card under WSL (ROCm PyTorch) for small experiments.
+- Compare models first: `asr/compare_models.py` runs Whisper, Qwen3-ASR, Voxtral and NVIDIA NeMo models
+  locally on the same sample of clips (same audio, same normalisation, numbers spelled out) and prints
+  word/character error rates per recording. `asr/finetune_qwen3.py` and `asr/finetune_nemo.py` train on the
+  same split as `finetune_whisper.py`. On AMD, NeMo needs `MIOPEN_FIND_MODE=FAST`, and NeMo transducer
+  (TDT) training is only practical on NVIDIA.
 - Serve with faster-whisper behind an OpenAI-compatible `/v1/audio/transcriptions` endpoint,
   EU-hosted, then point `STT_PROVIDER`/`LLM_BASE_URL`-style settings at it.
 - Re-run the benchmark and the safety eval (`babbel-evals --classifier`) before every switch.

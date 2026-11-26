@@ -21,6 +21,7 @@ agent = [
   "livekit-api>=1.2",
 ]
 asr = ["jiwer>=3.0"]
+asr-local = ["jiwer>=3.0", "faster-whisper>=1.1"]  # Whisper on your own PC, no key (NFR-11)
 bakeoff = ["anthropic>=2.14"]  # model bake-off: Claude via the Anthropic SDK
 dev = ["pytest>=8", "ruff>=0.6"]
 

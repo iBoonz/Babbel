@@ -50,6 +50,70 @@ def safety_misses(reference: str, hypothesis: str, detector: KeywordDetector) ->
     return expected, expected - found
 
 
+TRANSCRIPT_NOISE = re.compile(r"\?\?\?|\bxxx\b|\bggg\b|\[[^\]]*\]")
+FILLERS = {"uh", "uhm", "eh", "ehm", "hm", "mm", "mhm", "mm-hu"}
+
+
+def clean_transcript(text: str) -> str:
+    """Comparable text from a dialect transcript or a model's output (NFR-11): lowercase, no
+    punctuation, no fillers, and the GCND corpus marks removed: `·` joins a clitic ("k·zeggen"),
+    `???`/`xxx` is unintelligible, `ggg` is laughter or noise. Training targets and both sides
+    of a word error rate go through the same function."""
+    text = text.lower().replace("’", "'").replace("·", " ")
+    text = TRANSCRIPT_NOISE.sub(" ", text)
+    text = re.sub(r"[^\w\s'-]", " ", text)
+    words = (w.strip("'-") for w in text.split())
+    return " ".join(w for w in words if w and w not in FILLERS)
+
+
+def training_clips(rows: list[dict], text_col: str, held_out: set[str],
+                   max_seconds: float = 29.5) -> list[dict]:
+    """Clips to fine-tune on (NFR-11): a usable transcript in `text_col`, at most `max_seconds` long,
+    and never from a held-out recording, so no speaker ends up on both sides of the split. Each row
+    gets `text`, the cleaned target. The same rule for every model keeps the comparison fair."""
+    out = []
+    for r in rows:
+        if r.get("recording") in held_out:
+            continue
+        text = clean_transcript(r.get(text_col, ""))
+        dur = float(r.get("source_end") or 0) - float(r.get("source_start") or 0)
+        if text and 0 < dur <= max_seconds:
+            out.append({**r, "text": text})
+    return out
+
+
+def tail_clips(rows: list[dict], fraction: float) -> set[str]:
+    """Audio paths of the last `fraction` of every recording, in time order (NFR-11). Held out as one
+    block per recording, so the model has heard every dialect but never these sentences, and
+    neighbouring sentences (same topic, same names) cannot leak into training."""
+    by_rec: dict[str, list[dict]] = {}
+    for r in rows:
+        by_rec.setdefault(r.get("recording", ""), []).append(r)
+    out: set[str] = set()
+    for clips in by_rec.values():
+        clips = sorted(clips, key=lambda r: float(r.get("source_start") or 0))
+        cut = len(clips) - round(len(clips) * fraction)
+        out.update(r["audio"] for r in clips[cut:])
+    return out
+
+
+def spell_numbers(text: str, lang: str = "nl") -> str:
+    """Write digits as words ("1910" -> "negentienhonderdtien") so a model that writes digits and a
+    transcript that spells numbers out are compared fairly (NFR-11). Needs `num2words`; without it the
+    text is returned unchanged."""
+    try:
+        from num2words import num2words
+    except ImportError:  # pragma: no cover
+        return text
+
+    def words(m: re.Match) -> str:
+        try:
+            return f" {num2words(int(m.group(0)), lang=lang)} "
+        except (OverflowError, NotImplementedError, ValueError):
+            return m.group(0)
+    return re.sub(r"\d+", words, text)
+
+
 def read_csv_rows(path: str | Path) -> list[dict]:
     """Read a CSV saved by Excel, LibreOffice or a script: UTF-8 with or without BOM, comma- or
     semicolon-separated (Excel on a Belgian or Dutch Windows saves with semicolons)."""

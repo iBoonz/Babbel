@@ -18,6 +18,8 @@ Providers (--provider), key from the environment variable in brackets:
   deepgram     Deepgram pre-recorded                                     [DEEPGRAM_API_KEY]
   azure        Azure AI Speech fast transcription, locale nl-BE          [AZURE_SPEECH_KEY, --region]
   speechmatics Speechmatics batch                                         [SPEECHMATICS_API_KEY]
+  local        Whisper on this PC via faster-whisper: no key, audio never leaves the PC
+               (pip install -e ".[asr-local]"; --model large-v3-turbo | large-v3 | medium ...)
 
 The request shapes for elevenlabs, deepgram, azure and speechmatics were written from memory and
 not yet run against the live APIs: if a provider returns an error on the first run, check its
@@ -58,7 +60,7 @@ from babbel.evals.asr_tools import read_csv_rows, safety_misses, write_csv_rows
 PROMPT = "Vlaams gesprek met een oudere persoon. Namen: {names}."
 HINTS = " Woorden: {hints}."  # FR-19: dialect forms from locales/dialects/vlaams.yaml
 DEFAULT_MODELS = {"openai": "gpt-4o-transcribe", "elevenlabs": "scribe_v1", "deepgram": "nova-3",
-                  "azure": "fast", "speechmatics": "enhanced"}
+                  "azure": "fast", "speechmatics": "enhanced", "local": "large-v3-turbo"}
 
 
 def normalise(text: str) -> str:
@@ -78,6 +80,33 @@ def make_transcriber(provider: str, model: str = "", *, base_url: str = "", regi
                      names: str = "", hints: list[str] | None = None):
     """Returns a function path -> transcript text for one provider."""
     model = model or DEFAULT_MODELS.get(provider, "")
+    prompt = PROMPT.format(names=names or "-") + (HINTS.format(hints=", ".join(hints)) if hints else "")
+
+    if provider == "local":
+        # NFR-11 baseline that needs no account: the audio stays on this machine.
+        try:
+            from faster_whisper import WhisperModel
+        except ImportError:
+            sys.exit('pip install -e ".[asr-local]"  (installs faster-whisper)')
+        device = os.environ.get("WHISPER_DEVICE", "auto")
+        compute = os.environ.get("WHISPER_COMPUTE", "int8" if device in ("auto", "cpu") else "default")
+        print(f"loading Whisper {model} on {device} ({compute}); the first run downloads the model")
+        whisper = WhisperModel(model, device=device, compute_type=compute)
+
+        def run(path: Path) -> str:
+            # Decode with ffmpeg (16 kHz mono float), not faster-whisper's own PyAV reader, which
+            # breaks on newer PyAV releases.
+            import subprocess
+
+            import numpy as np
+            pcm = subprocess.run(["ffmpeg", "-v", "error", "-i", str(path), "-ac", "1", "-ar", "16000",
+                                  "-f", "f32le", "-"], capture_output=True, check=True).stdout
+            audio = np.frombuffer(pcm, dtype=np.float32)
+            segments, _ = whisper.transcribe(audio, language="nl", beam_size=5,
+                                             initial_prompt=prompt, condition_on_previous_text=False)
+            return " ".join(s.text.strip() for s in segments)
+        return run
+
     http = httpx.Client(timeout=300)
 
     if provider == "openai":
@@ -87,9 +116,7 @@ def make_transcriber(provider: str, model: str = "", *, base_url: str = "", regi
         def run(path: Path) -> str:
             with path.open("rb") as fh:
                 r = http.post(f"{url}/audio/transcriptions", headers={"Authorization": f"Bearer {key}"},
-                              data={"model": model, "language": "nl",
-                                    "prompt": PROMPT.format(names=names or "-")
-                                    + (HINTS.format(hints=", ".join(hints)) if hints else "")},
+                              data={"model": model, "language": "nl", "prompt": prompt},
                               files={"file": (path.name, fh)})
             r.raise_for_status()
             return r.json().get("text", "")
@@ -212,8 +239,8 @@ def main() -> None:
         fill_drafts(manifest, make_transcriber(args.provider, model, base_url=args.base_url,
                                                region=args.region, names=args.names, hints=hints))
         return
-    if hints and args.provider != "openai":
-        print("note: --dialect-hints is only passed to the openai provider for now")
+    if hints and args.provider not in ("openai", "local"):
+        print("note: --dialect-hints is only passed to the openai and local providers for now")
     transcribe = make_transcriber(args.provider, model, base_url=args.base_url,
                                   region=args.region, names=args.names, hints=hints)
     detector = KeywordDetector(args.locale)
